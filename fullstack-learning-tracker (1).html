@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JS → TS → MySQL → Backend · Full Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E1116;--panel:#161B22;--panel-2:#1C2230;--line:#263042;
+    --text:#E6EDF3;--muted:#8B98A9;--azure:#4C8DFF;--amber:#F5A623;--pass:#3FB950;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--body);line-height:1.55;-webkit-font-smoothing:antialiased;padding:32px 20px 72px}
+  .wrap{max-width:900px;margin:0 auto}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  h1{font-family:var(--disp);font-weight:700;letter-spacing:-.02em;font-size:clamp(30px,5.5vw,46px);line-height:1.02;margin:0 0 6px}
+  h1 .arrow{color:var(--azure)}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 26px;max-width:62ch}
+  .sub b{color:var(--text);font-weight:600}
+
+  .meter{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:34px}
+  .meter-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .meter-label{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+  .meter-label #passing{color:var(--text)}
+  .meter-pct{font-family:var(--disp);font-weight:700;font-size:22px;color:var(--azure)}
+  .track{height:9px;border-radius:99px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line)}
+  .fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--azure),#7FB2FF);transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .fill.done{background:linear-gradient(90deg,var(--pass),#6FE38A)}
+  .meter-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+  .foot-note{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .reset{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;transition:.15s}
+  .reset:hover{color:var(--text);border-color:var(--azure)}
+  .reset:focus-visible{outline:2px solid var(--azure);outline-offset:2px}
+
+  .track-header{display:flex;align-items:center;gap:14px;margin:46px 0 4px}
+  .track-tag{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--ink);background:var(--amber);border-radius:6px;padding:5px 10px;text-transform:uppercase;white-space:nowrap}
+  .track-name{font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:-.01em}
+  .track-desc{font-size:12.5px;color:var(--muted);margin:2px 0 18px}
+
+  .phase{display:flex;align-items:center;gap:14px;margin:30px 0 16px}
+  .phase-tag{font-family:var(--mono);font-weight:700;font-size:11px;letter-spacing:.16em;color:var(--ink);background:var(--azure);border-radius:6px;padding:4px 9px;text-transform:uppercase;white-space:nowrap}
+  .phase-name{font-family:var(--disp);font-weight:600;font-size:15.5px;letter-spacing:-.01em}
+  .phase-range{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+  .day{position:relative;display:grid;grid-template-columns:44px 1fr;gap:14px;padding-bottom:16px}
+  .spine{position:relative;display:flex;flex-direction:column;align-items:center}
+  .node{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:12px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);transition:.3s;position:relative;z-index:2}
+  .rail{flex:1;width:2px;background:var(--line);margin:4px 0 -14px;border-radius:2px}
+  .day:last-child .rail{display:none}
+  .day.complete .node{background:rgba(63,185,80,.14);border-color:var(--pass);color:var(--pass);box-shadow:0 0 0 4px rgba(63,185,80,.08)}
+  .day.current .node{border-color:var(--amber);color:var(--amber);box-shadow:0 0 0 4px rgba(245,166,35,.10)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 16px;transition:.3s}
+  .day.current .card{border-color:rgba(245,166,35,.4)}
+  .day.complete .card{opacity:.8}
+  .card-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .theme{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .star{color:var(--amber);font-size:12px}
+  .split{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto;white-space:nowrap;letter-spacing:.03em}
+
+  .tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+  .task{position:relative}
+  .task input{position:absolute;opacity:0;width:0;height:0}
+  .task label{display:flex;align-items:center;gap:11px;cursor:pointer;padding:7px 8px;border-radius:9px;transition:background .15s}
+  .task label:hover{background:var(--panel-2)}
+  .box{flex:none;width:17px;height:17px;border-radius:5px;border:1.5px solid var(--line);background:transparent;position:relative;transition:.15s}
+  .task input:checked + label .box{background:var(--pass);border-color:var(--pass)}
+  .box::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid var(--ink);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transition:transform .15s}
+  .task input:checked + label .box::after{transform:rotate(45deg) scale(1)}
+  .task input:focus-visible + label .box{outline:2px solid var(--azure);outline-offset:2px}
+  .t-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .t-text{font-size:13.5px}
+  .t-text a{color:#B9C6FF;text-decoration:none;border-bottom:1px dotted #4C6A9E}
+  .t-text a:hover{color:var(--azure)}
+  .task input:checked + label .t-text{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+  .kind{font-family:var(--mono);font-size:9px;letter-spacing:.12em;font-weight:700;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+  .k-VIDEO{color:#5AD0C4;background:rgba(90,208,196,.12)}
+  .k-CONCEPT{color:#7FB2FF;background:rgba(76,141,255,.12)}
+  .k-DRILL{color:var(--amber);background:rgba(245,166,35,.12)}
+  .k-BUILD{color:var(--pass);background:rgba(63,185,80,.12)}
+  .k-SECURITY{color:#FF7B72;background:rgba(255,123,114,.12)}
+  .k-SCALE{color:#5AD0C4;background:rgba(90,208,196,.12)}
+  .k-REFLECT{color:#C9A9FF;background:rgba(201,169,255,.12)}
+  .k-TEST{color:#F5C77E;background:rgba(245,199,126,.12)}
+
+  .note{margin-top:11px;border-left:2px solid var(--azure);padding:9px 0 9px 13px;font-size:12px;color:var(--muted)}
+  .note b{color:var(--text);font-weight:600}
+  .note pre{font-family:var(--mono);font-size:11px;color:#C7D2E0;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin:8px 0 0;overflow-x:auto;line-height:1.5}
+  .note code{font-family:var(--mono);color:#B9C6FF}
+
+  footer{margin-top:44px;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;line-height:1.7}
+
+  @media (max-width:560px){
+    .day{grid-template-columns:36px 1fr;gap:10px}
+    .node{width:28px;height:28px;font-size:10px}
+    .split{width:100%;margin:2px 0 0}
+  }
+  @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">6 tracks · 1 progress bar · self-paced</p>
+  <h1>JS <span class="arrow">→</span> TS <span class="arrow">→</span> MySQL <span class="arrow">→</span> Backend <span class="arrow">→</span> Design <span class="arrow">→</span> DSA</h1>
+  <p class="sub">One tracker, six tracks, in dependency order: <b>JavaScript fundamentals</b> (75-topic video course) → <b>TypeScript</b> (strict typing on top of the JS you already know) → <b>MySQL</b> (Bro Code Full Course, 31 topics — DB/tables, CRUD, constraints, keys, joins, functions, views, indexes, subqueries, GROUP BY, stored procedures, triggers) → <b>Backend build</b> (80-day full build: Express v5 + MySQL/Sequelize + JWT auth + Redis/BullMQ + Socket.IO + Angular + testing + Docker/CI/CD + capstone) → <b>System design</b> (fundamentals + fintech-flavored applied practice) → <b>DSA</b> (interview-grade, FAANG/fintech bar). Everything checked in Track 1 (#1–21) and Track 3 (MySQL #1–30) carries over from prior work.</p>
+
+  <div class="meter" role="status" aria-live="polite">
+    <div class="meter-top">
+      <span class="meter-label">TOTAL · <span id="passing">0/0</span> complete</span>
+      <span class="meter-pct" id="pct">0%</span>
+    </div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="meter-foot">
+      <span class="foot-note" id="phaseNote">Stage: —</span>
+      <button class="reset" id="reset">reset progress</button>
+    </div>
+  </div>
+
+  <div id="board"></div>
+  <footer>check things off — progress persists locally.<br>⭐ = quiz/capstone checkpoint · versions noted as of Aug 2026 (Node 22/24 LTS, Angular 22, Express 5.2.x, Sequelize v6, Redis 7) — re-verify before each phase, they move fast</footer>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const VID_BASE="https://www.youtube.com/watch?v=lfmg-EJ8gm4";
+function V(time,name,star,done){
+  const url=`${VID_BASE}&t=${time}s`;
+  const mm=String(Math.floor(time/60)%60).padStart(2,"0"),hh=String(Math.floor(time/3600)).padStart(2,"0"),ss=String(time%60).padStart(2,"0");
+  return {theme:name,star:!!star,done:!!done,split:`${hh}:${mm}:${ss}`,
+    tasks:[{k:"VIDEO",t:`<a href="${url}" target="_blank" rel="noopener">Watch &amp; code along</a>`}]};
+}
+const TS_VID_BASE="https://www.youtube.com/watch?v=ZvZ7gvcmPmI";
+function W(time,name,done){
+  const url=`${TS_VID_BASE}&t=${time}s`;
+  const mm=String(Math.floor(time/60)%60).padStart(2,"0"),hh=String(Math.floor(time/3600)).padStart(2,"0"),ss=String(time%60).padStart(2,"0");
+  return {theme:name,star:false,done:!!done,split:`${hh}:${mm}:${ss}`,
+    tasks:[{k:"VIDEO",t:`<a href="${url}" target="_blank" rel="noopener">Watch &amp; code along</a>`}]};
+}
+/* MySQL (Bro Code Full Course 2023) — chapter numbers match the video's own timestamp list.
+   No second-offsets baked in (unverified) — task text carries the chapter # so you can jump via
+   the video's pinned-comment timestamp index instead of a guessed link. */
+const SQL_VID="https://www.youtube.com/watch?v=5OdVJbNCSso";
+function M(num,name,done){
+  return {theme:`#${num} ${name}`,star:false,done:!!done,split:"",
+    tasks:[{k:"VIDEO",t:`<a href="${SQL_VID}" target="_blank" rel="noopener">Watch chapter #${num} (use video's timestamp index)</a>`}]};
+}
+
+/* ---------- PLAN ---------- */
+const PLAN=[
+
+  {track:"1",tname:"JavaScript Fundamentals",tdesc:"75-topic video course, in order. #1–21 pre-completed from prior work."},
+
+  {phase:"A",pname:"Core basics",range:"#1–13"},
+  V(0,"JavaScript tutorial for beginners",false,true),
+  V(752,"Variables",false,true),
+  V(1520,"Arithmetic operators",false,true),
+  V(2027,"Accept user input",false,true),
+  V(2349,"Type conversion",false,true),
+  V(2688,"Constants",false,true),
+  V(3150,"Counter program",true,true),
+  V(3706,"Math object",false,true),
+  V(4043,"Random number generator",false,true),
+  V(4559,"If statements",false,true),
+  V(5516,"Checked property",false,true),
+  V(6123,"Ternary operator",false,true),
+  V(6529,"Switches",false,true),
+
+  {phase:"B",pname:"Strings & control flow",range:"#14–21"},
+  V(6933,"String methods",false,true),
+  V(7415,"String slicing",false,true),
+  V(7896,"Method chaining",false,true),
+  V(8223,"Logical operators",false,true),
+  V(8564,"Strict equality",false,true),
+  V(8801,"While loops",false,true),
+  V(9293,"For loops",false,true),
+  V(9637,"Number guessing game",true,true),
+
+  {phase:"C",pname:"Functions & scope",range:"#22–24"},
+  V(10171,"Functions",false,true),
+  V(10904,"Variable scope",false,true),
+  V(11230,"Temperature conversion program",true,true),
+
+  {phase:"D",pname:"Arrays & modern syntax",range:"#25–29"},
+  V(12208,"Arrays",false,true),
+  V(12693,"Spread operator",false,true),
+  V(12987,"Rest parameters",false,true),
+  V(13472,"Dice Roller program",true,true),
+  V(14324,"Random password generator",true,true),
+
+  {phase:"E",pname:"Higher-order array methods",range:"#30–35"},
+  V(15049,"Callbacks",false,true),
+  V(15485,"forEach()",false,true),
+  V(15967,"map()",false,true),
+  V(16388,"filter()",false,true),
+  V(16777,"reduce()",false,true),
+  V(17107,"Function expressions",false,true),
+
+  {phase:"F",pname:"Objects & OOP",range:"#36–44"},
+  V(17559,"Arrow functions",false,true),
+  V(18040,"JavaScript Objects",false,true),
+  V(18460,"What is THIS",false,true),
+  V(18727,"Constructors",false,true),
+  V(19058,"Classes",false,true),
+  V(19427,"STATIC keyword",false,true),
+  V(19910,"Inheritance",false,true),
+  V(20333,"SUPER keyword",false,true),
+  V(20894,"Getters & Setters",false,true),
+
+  {phase:"G",pname:"Data structures",range:"#45–50"},
+  V(21688,"Destructuring",false,true),
+  V(22208,"Nested objects",false,true),
+  V(22761,"Arrays of objects",false,true),
+  V(23361,"Sorting",false,true),
+  V(23763,"Shuffle an array",false,true),
+  V(24008,"Dates",false,true),
+
+  {phase:"H",pname:"Closures & timing",range:"#51–54"},
+  V(24489,"Closures",false,true),
+  V(25147,"setTimeout()",false,true),
+  V(25520,"Digital Clock program",true),
+  V(26167,"Stopwatch program",true),
+
+  {phase:"I",pname:"Modules, async basics, errors",range:"#55–57"},
+  V(27252,"ES6 Modules",false,true),
+  V(27617,"Asynchronous code",false,true),
+  V(27904,"Error handling",false,true),
+
+  {phase:"L",pname:"Async, advanced",range:"#70–74"},
+  V(38043,"Callback Hell?",false,true),
+  V(38390,"Promises",false,true),
+  V(39144,"Async/Await",false,true),
+  V(39420,"JSON files",false,true),
+  V(40027,"Fetch data from an API",false,true),
+
+  /* ============================================================ */
+  {track:"2",tname:"TypeScript",tdesc:"Full chapter-based course. All topics completed."},
+
+  {phase:"N",pname:"TypeScript — setup, types, functions",range:"Ch 2–5"},
+  W(275,"Setup, first app & running code",true),
+  W(590,"Configuration (tsconfig)",true),
+  W(597,"Built-in types & type annotations",true),
+  W(718,"Dynamic type determination & any",true),
+  W(805,"Type annotations with objects",true),
+  W(874,"Function type annotations",true),
+  W(966,"Optional & default parameters",true),
+  W(1064,"Rest parameters",true),
+  W(1142,"Arrow & anonymous functions",true),
+  W(1186,"void & never",true),
+
+  {phase:"O",pname:"Advanced types, arrays, tuples, enums",range:"Ch 6–9"},
+  W(1252,"Union types",true),
+  W(1295,"Literal types",true),
+  W(1492,"Nullable types",true),
+  W(1575,"Type alias",true),
+  W(1616,"Intersection types",true),
+  W(1622,"Arrays & multidimensional arrays",true),
+  W(1687,"Tuples",true),
+  W(1739,"Enums",true),
+
+  {phase:"P",pname:"Interfaces & classes",range:"Ch 10–11"},
+  W(1807,"Interface basics, methods & reopening",true),
+  W(2159,"Built-in interfaces (e.g. HTMLImageElement)",true),
+  W(2255,"Interface vs type aliases",true),
+  W(2394,"Class type annotations",true),
+  W(2476,"Class access modifiers",true),
+  W(2580,"Class accessors",true),
+  W(2646,"Class static members",true),
+  W(2717,"Class implements interface",true),
+  W(2769,"Abstract classes & members",true),
+  W(2844,"Polymorphism & method override",true),
+  W(2986,"Class vs interface",true),
+
+  {phase:"Q",pname:"Generics",range:"Ch 12"},
+  W(3001,"Generics",true),
+  W(3099,"Generics with multiple types",true),
+  W(3164,"Generic classes",true),
+  W(3239,"Generics & interfaces",true),
+
+  /* ============================================================ */
+  {track:"3",tname:"MySQL",tdesc:"Bro Code Full Course (2023), 31 chapters, in order. PostgreSQL track halted — MySQL is the DB of record for this path."},
+
+  {phase:"M1",pname:"Basics",range:"Ch 1–6"},
+  M(1,"Intro + installation (Windows/Mac)",true),
+  M(2,"Databases",true),
+  M(3,"Tables",true),
+  M(4,"Insert rows",true),
+  M(5,"Select",true),
+  M(6,"Update & delete",true),
+
+  {phase:"M2",pname:"Transactions & constraints",range:"Ch 7–14"},
+  M(7,"Autocommit, commit, rollback",true),
+  M(8,"Current_date & current_time",true),
+  M(9,"Unique",true),
+  M(10,"Not null",true),
+  M(11,"Check",true),
+  M(12,"Default",true),
+  M(13,"Primary keys",true),
+  M(14,"Auto_increment",true),
+
+  {phase:"M3",pname:"Relationships & joins",range:"Ch 15–19, 23"},
+  M(15,"Foreign keys",true),
+  M(16,"Joins",true),
+  M(17,"Functions",true),
+  M(18,"AND, OR, NOT",true),
+  M(19,"Wildcards",true),
+  M(23,"Self joins",true),
+
+  {phase:"M4",pname:"Ordering & aggregation",range:"Ch 20–22, 26–28"},
+  M(20,"Order by",true),
+  M(21,"Limit",true),
+  M(22,"Unions",true),
+  M(26,"Subqueries",true),
+  M(27,"Group by",true),
+  M(28,"Rollup",true),
+
+  {phase:"M5",pname:"Views, indexes & procedures",range:"Ch 24–25, 29–31",star:true},
+  M(24,"Views",true),
+  M(25,"Indexes",true),
+  M(29,"On delete",true),
+  M(30,"Stored procedures",true),
+  M(31,"Triggers (skipped — revisit if a backend feature needs DB-level triggers)"),
+
+  /* ============================================================ */
+  {track:"4",tname:"Backend Build",tdesc:"Full-stack build track: Express v5 + MySQL/Sequelize + JWT auth + Redis/BullMQ + Socket.IO + Angular + testing + Docker/CI/CD, capped with a capstone. Replaces the original 17-day skeleton plan. Verify current library majors before each phase (versions below corrected as of Aug 2026: Node 22/24 LTS, Angular 22, Express 5.2.x)."},
+
+  {phase:"O",pname:"Node.js & Express v5 core",range:"Days 1–10"},
+  {theme:"Node.js internals — event loop & streams",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"libuv, event loop phases, streams, Buffer, process, fs module"},
+   ]},
+  {theme:"Express v5 — routing & middleware",split:"",done:true,
+   tasks:[
+     {k:"CONCEPT",t:"app.use, Router, route params, query strings, middleware chain"},
+   ]},
+  {theme:"Request validation with Zod",split:"",done:true,
+   tasks:[
+     {k:"CONCEPT",t:"Zod schemas, .parse vs .safeParse, schema composition, error formatting"},
+   ]},
+  {theme:"Error handling — global & typed",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Express error middleware, custom AppError class, HTTP status codes, async wrapper"},
+   ]},
+  {theme:"Swagger / OpenAPI docs",split:"",
+   tasks:[
+     {k:"BUILD",t:"swagger-jsdoc annotations, swagger-ui-express, OpenAPI 3.0 schemas, Zod-to-OpenAPI"},
+   ]},
+  {theme:"Logging + security headers",split:"",
+   tasks:[
+     {k:"SECURITY",t:"Structured logging (Pino), log levels, helmet, cors, rate-limit, compression"},
+   ]},
+  {theme:"File uploads — object storage",split:"",
+   tasks:[
+     {k:"BUILD",t:"Multer, presigned URLs, multipart upload, file type validation"},
+   ]},
+  {theme:"Transactional email",split:"",
+   tasks:[
+     {k:"BUILD",t:"Email SDK, transactional templates, bounce handling, sandbox vs prod"},
+   ]},
+  {theme:"Environment config & secrets",split:"",
+   tasks:[
+     {k:"SECURITY",t:"dotenv, secrets manager SDK, config service pattern, never commit secrets"},
+   ]},
+  {theme:"Quiz + mini REST API",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Build a fully typed, validated, documented REST API with Zod + Swagger"},
+   ]},
+
+  {phase:"P",pname:"MySQL & Sequelize v6",range:"Days 11–17"},
+  {theme:"MySQL fundamentals",split:"",done:true,
+   tasks:[
+     {k:"CONCEPT",t:"DDL/DML, joins, indexes, transactions, EXPLAIN, connection pooling"},
+   ]},
+  {theme:"Sequelize models & associations",split:"",done:true,
+   tasks:[
+     {k:"CONCEPT",t:"Model definition, DataTypes, hasMany/belongsTo/hasOne/belongsToMany"},
+   ]},
+  {theme:"Migrations & seeders",split:"",done:true,
+   tasks:[
+     {k:"BUILD",t:"Migration files, up/down, seeders, version locking, CI integration"},
+   ]},
+  {theme:"Queries — advanced patterns",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Raw queries, scopes, hooks, bulk operations, transactions, optimistic locking"},
+   ]},
+  {theme:"Repository pattern with TypeScript",split:"",
+   tasks:[
+     {k:"BUILD",t:"Generic Repository<T>, service layer, DTO pattern, separation of concerns"},
+   ]},
+  {theme:"Pagination & filtering",split:"",
+   tasks:[
+     {k:"BUILD",t:"Cursor-based pagination, offset pagination, dynamic where clauses, sorting"},
+   ]},
+  {theme:"Quiz + DB design exercise",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Design and implement a multi-table schema with migrations, repos, and pagination"},
+   ]},
+
+  {phase:"Q",pname:"JWT auth — RS256",range:"Days 18–22"},
+  {theme:"Auth fundamentals — JWT deep dive",split:"",
+   tasks:[
+     {k:"SECURITY",t:"RS256 vs HS256, public/private keys, token anatomy, access vs refresh tokens"},
+   ]},
+  {theme:"Registration & login flow",split:"",done:true,
+   tasks:[
+     {k:"SECURITY",t:"Password hashing with bcrypt, user model, login endpoint, token issuance"},
+   ]},
+  {theme:"Auth strategy middleware",split:"",done:true,
+   tasks:[
+     {k:"CONCEPT",t:"JWT strategy, extractors, validate callback, protect middleware, role guards"},
+   ]},
+  {theme:"Refresh token rotation",split:"",
+   tasks:[
+     {k:"SECURITY",t:"Refresh token DB storage, rotation strategy, revocation, device sessions"},
+   ]},
+  {theme:"Auth quiz + secure API",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Implement full auth flow: register, login, refresh, logout, protected routes"},
+   ]},
+
+  {phase:"R",pname:"Redis, BullMQ & queues",range:"Days 23–29"},
+  {theme:"Redis fundamentals",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Strings, hashes, lists, sets, sorted sets, TTL, pub/sub, persistence"},
+   ]},
+  {theme:"Caching patterns",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Cache-aside, write-through, cache invalidation, serialisation, Redis pipeline"},
+   ]},
+  {theme:"BullMQ — job queues",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Queue, Worker, Job types, priorities, delays, retries, backoff"},
+   ]},
+  {theme:"BullMQ — advanced patterns",split:"",
+   tasks:[
+     {k:"BUILD",t:"Job chaining, flows, rate limiting workers, concurrency, dead letter queue"},
+   ]},
+  {theme:"Queue monitoring UI",split:"",
+   tasks:[
+     {k:"BUILD",t:"Install a queue dashboard, secure it, monitor jobs in real-time"},
+   ]},
+  {theme:"Session store + socket scaling",split:"",
+   tasks:[
+     {k:"SCALE",t:"Redis session store, socket.io Redis adapter, horizontal scaling with Redis"},
+   ]},
+  {theme:"Quiz + async job system",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Build an email queue: job creation → queue → worker → email delivery"},
+   ]},
+
+  {phase:"S",pname:"Socket.IO — real-time",range:"Days 30–34"},
+  {theme:"Socket.IO server setup",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Namespaces, rooms, events, emit/on, acknowledgements, middleware"},
+   ]},
+  {theme:"Auth for WebSockets",split:"",
+   tasks:[
+     {k:"SECURITY",t:"JWT validation in handshake middleware, user-to-socket mapping, disconnect handling"},
+   ]},
+  {theme:"Scaling with Redis adapter",split:"",
+   tasks:[
+     {k:"SCALE",t:"Multi-server broadcasting, sticky sessions, Redis pub/sub under the hood"},
+   ]},
+  {theme:"Real-time notifications pattern",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Server-sent events vs WebSocket, notification service, room-based delivery"},
+   ]},
+  {theme:"Quiz + real-time chat feature",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Build a room-based chat with auth, typing indicators, and Redis scaling"},
+   ]},
+
+  {phase:"T",pname:"Angular + TypeScript + OpenAPI codegen",range:"Days 35–47"},
+  {theme:"Angular crash course — components & modules",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Components, standalone/NgModules, templates, data binding, lifecycle hooks"},
+   ]},
+  {theme:"Angular services & dependency injection",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"@Injectable, providers, DI tree, singleton vs scoped services"},
+   ]},
+  {theme:"RxJS fundamentals",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Observable, Subject, BehaviorSubject, map/filter/switchMap/mergeMap/combineLatest"},
+   ]},
+  {theme:"Angular routing & guards",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Router, lazy loading, CanActivate/CanMatch, route params, resolvers"},
+   ]},
+  {theme:"Forms — reactive & signal forms",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"FormBuilder, FormGroup, validators, async validators, Signal Forms basics"},
+   ]},
+  {theme:"OpenAPI codegen setup",split:"",
+   tasks:[
+     {k:"BUILD",t:"Install codegen CLI, configure spec source, generate from Express Swagger JSON"},
+   ]},
+  {theme:"Using generated Angular services",split:"",
+   tasks:[
+     {k:"BUILD",t:"Generated API services, models, HttpClient interceptors, base URL config"},
+   ]},
+  {theme:"HttpClient interceptors — auth & errors",split:"",
+   tasks:[
+     {k:"SECURITY",t:"Add Bearer token, handle 401 refresh flow, global error interceptor"},
+   ]},
+  {theme:"State management — Signals",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Angular Signals, computed, effect, signal-based services vs NgRx"},
+   ]},
+  {theme:"Socket.IO in Angular",split:"",
+   tasks:[
+     {k:"BUILD",t:"socket.io-client, SocketService wrapper, RxJS-to-socket bridge, reconnect"},
+   ]},
+  {theme:"Angular Material UI",split:"",
+   tasks:[
+     {k:"BUILD",t:"Component library setup, theming, form integration, responsive layout"},
+   ]},
+  {theme:"HTTP testing",split:"",
+   tasks:[
+     {k:"BUILD",t:"TestBed, HttpClientTestingModule, mock requests, component testing"},
+   ]},
+  {theme:"Quiz + Angular app consuming your API",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Full Angular app: auth, generated API services, real-time socket, state management"},
+   ]},
+
+  {phase:"U",pname:"Testing — backend & frontend",range:"Days 48–54"},
+  {theme:"Test runner setup",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Test config, TS preset, test structure, describe/it/expect, mocking modules"},
+   ]},
+  {theme:"Unit tests — services & repositories",split:"",
+   tasks:[
+     {k:"BUILD",t:"Mock dependencies, test business logic in isolation, coverage thresholds"},
+   ]},
+  {theme:"Integration tests — Supertest",split:"",
+   tasks:[
+     {k:"BUILD",t:"HTTP calls, test DB setup, JWT in test headers, response assertions"},
+   ]},
+  {theme:"Testcontainers — real DB in tests",split:"",
+   tasks:[
+     {k:"BUILD",t:"Spin up MySQL + Redis in Docker for tests, teardown, CI integration"},
+   ]},
+  {theme:"Queue worker testing",split:"",
+   tasks:[
+     {k:"BUILD",t:"Test job processors in isolation, mock queue, test retry logic"},
+   ]},
+  {theme:"APM setup",split:"",
+   tasks:[
+     {k:"BUILD",t:"APM agent, custom transactions, error tracking, dashboard setup"},
+   ]},
+  {theme:"Quiz + full test suite",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Write unit + integration + e2e tests for your existing API project"},
+   ]},
+
+  {phase:"V",pname:"Docker, PM2 & CI/CD",range:"Days 55–64"},
+  {theme:"Docker fundamentals",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Images, containers, Dockerfile, layers, .dockerignore, build cache"},
+   ]},
+  {theme:"Multi-stage Dockerfile for Node.js",split:"",
+   tasks:[
+     {k:"BUILD",t:"Builder stage, production stage, non-root user, minimal final image"},
+   ]},
+  {theme:"Docker Compose — full stack local",split:"",
+   tasks:[
+     {k:"BUILD",t:"Compose services: app, MySQL, Redis, Nginx. Volumes, networks, healthchecks"},
+   ]},
+  {theme:"PM2 — process management",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"pm2 start, cluster mode, ecosystem.config.js, pm2 logs, pm2 monit, graceful reload"},
+   ]},
+  {theme:"PM2 inside Docker",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Why use PM2 in Docker, when not to, pm2-runtime, proper signal handling"},
+   ]},
+  {theme:"Nginx — reverse proxy & load balancer",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"nginx.conf, upstream, proxy_pass, rate limit, SSL termination, static files"},
+   ]},
+  {theme:"CI/CD pipelines",split:"",
+   tasks:[
+     {k:"BUILD",t:"Pipeline YAML, build/test/deploy stages, Docker build in CI, secrets in CI vars"},
+   ]},
+  {theme:"CI/CD — cloud deploy",split:"",
+   tasks:[
+     {k:"BUILD",t:"Registry push, container service deploy, rollback strategy, blue-green basics"},
+   ]},
+  {theme:"Cloud load balancer",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Target groups, health checks, managed LB vs Nginx, SSL cert, sticky sessions"},
+   ]},
+  {theme:"Quiz + full deployment",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Deploy your full app: Docker → registry → container service, Nginx local, LB prod, PM2 inside"},
+   ]},
+
+  {phase:"W",pname:"Production hardening & capstone",range:"Days 65–72"},
+  {theme:"Security hardening",split:"",
+   tasks:[
+     {k:"SECURITY",t:"OWASP top 10 for Node, SQL injection prevention, XSS, CSRF, input sanitization"},
+   ]},
+  {theme:"Observability — logs, metrics, traces",split:"",
+   tasks:[
+     {k:"BUILD",t:"Tracing SDK, structured logging sink, custom metrics, distributed tracing"},
+   ]},
+  {theme:"Performance — caching strategy",split:"",
+   tasks:[
+     {k:"SCALE",t:"HTTP cache headers, Redis multi-level caching, N+1 query detection, DB indexes"},
+   ]},
+  {theme:"API versioning & deprecation",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"URL versioning (/v1, /v2), header versioning, deprecation notices, migration path"},
+   ]},
+  {theme:"Microservice patterns (intro)",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Service-to-service HTTP, shared DB anti-pattern, event-driven via queue, strangler fig"},
+   ]},
+  {theme:"Capstone day 1 — architecture & setup",split:"",
+   tasks:[
+     {k:"BUILD",t:"Design full-stack app: ERD, API design, Swagger spec, Angular module plan"},
+   ]},
+  {theme:"Capstone day 2 — build",split:"",
+   tasks:[
+     {k:"BUILD",t:"Implement backend: auth, queues, sockets, migrations, tests, Docker"},
+   ]},
+  {theme:"Capstone day 3 — frontend & deploy",split:"",star:true,
+   tasks:[
+     {k:"BUILD",t:"Angular app with generated services, real-time, CI/CD pipeline, full deployment"},
+   ]},
+  /* ============================================================ */
+  {track:"5",tname:"System Design",tdesc:"Fundamentals + applied practice, aimed at backend/fintech interview bar (JPM, Zerodha, CRED, FAANG-tier). Source course TBD — pick one (e.g. Gaurav Sen, ByteByteGo, or a written resource) and verify it's current before starting."},
+
+  {phase:"V",pname:"Fundamentals",range:"Week 1"},
+  {theme:"Core building blocks",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Scalability basics — vertical vs horizontal, stateless vs stateful services"},
+     {k:"CONCEPT",t:"Load balancing — algorithms, L4 vs L7, health checks"},
+     {k:"CONCEPT",t:"Caching strategies — write-through, write-behind, cache-aside; eviction policies"},
+   ]},
+  {theme:"Data layer at scale",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Database scaling — replication, sharding strategies, partition keys"},
+     {k:"CONCEPT",t:"CAP theorem, consistency models (strong vs eventual)"},
+     {k:"CONCEPT",t:"SQL vs NoSQL tradeoffs — when each actually wins"},
+   ]},
+  {theme:"Messaging & delivery",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Message queues vs pub/sub, at-least-once vs exactly-once delivery"},
+     {k:"CONCEPT",t:"CDN basics, rate limiting algorithms (token bucket, sliding window)"},
+     {k:"REFLECT",t:"Map these concepts back onto your own Track 4 API — where would each apply?"},
+   ]},
+
+  {phase:"W",pname:"Applied — fintech-flavored",range:"Week 2"},
+  {theme:"Ledger + transaction design",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Design a ledger system — double-entry basics, idempotency keys, reconciliation"},
+     {k:"BUILD",t:"Whiteboard/doc: design a simplified order-matching or trade-ledger system"},
+     {k:"SECURITY",t:"Idempotent writes on financial endpoints — duplicate request must never double-post"},
+   ]},
+  {theme:"High-throughput read path",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Design a URL shortener or notification system (classic interview problems, do at least one)"},
+     {k:"BUILD",t:"Whiteboard/doc: design a rate-limited public API gateway"},
+     {k:"SCALE",t:"Identify the single point of failure in your own design and fix it on paper"},
+   ]},
+
+  {phase:"X",pname:"Interview practice",range:"Week 3"},
+  {theme:"Mock design rounds",split:"",star:true,
+   tasks:[
+     {k:"DRILL",t:"Do 3 timed (45min) system design mocks — self-run or with a peer"},
+     {k:"REFLECT",t:"Write your own design-interview framework doc (requirements → estimate → high-level → deep-dive → tradeoffs)"},
+     {k:"REFLECT",t:"List 5 designs you can now speak to fluently — this becomes interview prep bank"},
+   ]},
+
+  /* ============================================================ */
+  {track:"6",tname:"DSA",tdesc:"Interview-grade data structures & algorithms. Non-negotiable for FAANG-tier and fintech (JPM, Zerodha) screens. Pick a structured resource (e.g. NeetCode 150, Striver's SDE sheet) and verify pattern list is current."},
+
+  {phase:"Y",pname:"Foundations",range:"Weeks 1–2"},
+  {theme:"Arrays, strings, hashing",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Two pointers, sliding window, prefix sums"},
+     {k:"DRILL",t:"15–20 problems: arrays + strings, easy → medium"},
+     {k:"CONCEPT",t:"Hash maps/sets — collision handling, when they beat sorting"},
+   ]},
+  {theme:"Stacks, queues, linked lists",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Stack/queue patterns — monotonic stack, LRU cache design"},
+     {k:"DRILL",t:"10–15 problems: linked lists (reverse, cycle detection, merge)"},
+     {k:"BUILD",t:"Implement an LRU cache from scratch (common fintech/infra interview ask)"},
+   ]},
+
+  {phase:"Z",pname:"Trees, graphs, recursion",range:"Weeks 3–4"},
+  {theme:"Trees",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Tree traversals (DFS/BFS), BST properties, balanced trees"},
+     {k:"DRILL",t:"15–20 problems: binary trees, BSTs"},
+   ]},
+  {theme:"Graphs",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Graph traversal (DFS/BFS), topological sort, union-find"},
+     {k:"DRILL",t:"15–20 problems: graphs (islands, courses/dependencies, shortest path)"},
+   ]},
+  {theme:"Recursion & backtracking",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Recursion tree thinking, backtracking template"},
+     {k:"DRILL",t:"10 problems: subsets, permutations, combinations"},
+   ]},
+
+  {phase:"AA",pname:"DP & greedy",range:"Weeks 5–6"},
+  {theme:"Dynamic programming",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"1D DP → 2D DP progression; memoization vs tabulation"},
+     {k:"DRILL",t:"20–25 problems: classic DP patterns (knapsack, LIS, edit distance family)"},
+   ]},
+  {theme:"Greedy + intervals",split:"",
+   tasks:[
+     {k:"CONCEPT",t:"Greedy proof intuition, interval scheduling patterns"},
+     {k:"DRILL",t:"10 problems: greedy + intervals"},
+   ]},
+
+  {phase:"AB",pname:"Interview practice",range:"Week 7"},
+  {theme:"Timed practice + mocks",split:"",star:true,
+   tasks:[
+     {k:"DRILL",t:"Timed 45min sessions — 2 medium problems per session, daily"},
+     {k:"REFLECT",t:"Maintain a mistakes log — pattern you missed, not just the problem"},
+     {k:"REFLECT",t:"Do 2–3 mock interviews (peer or platform) before applying"},
+   ]},
+];
+
+/* ---------- storage ---------- */
+const KEY="fullstack:progress";
+const store=(()=>{const mem={};return{
+  async load(){
+    try{if(window.storage){const r=await window.storage.get(KEY,false);return r&&r.value?JSON.parse(r.value):null;}}catch(e){}
+    try{const v=localStorage.getItem(KEY);if(v!==null)return JSON.parse(v);}catch(e){}
+    return null;
+  },
+  async save(o){const s=JSON.stringify(o);
+    try{if(window.storage){await window.storage.set(KEY,s,false);return;}}catch(e){}
+    try{localStorage.setItem(KEY,s);return;}catch(e){}
+    Object.assign(mem,o);
+  },
+  async clear(){
+    try{if(window.storage){await window.storage.delete(KEY,false);}}catch(e){}
+    try{localStorage.removeItem(KEY);}catch(e){}
+    for(const k in mem)delete mem[k];
+  }};})();
+
+/* ---------- render ---------- */
+let state={};
+const board=document.getElementById("board");
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+const items=PLAN.filter(p=>!p.phase&&!p.track);
+items.forEach((it,idx)=>{it._slug=slug(it.theme)+"-"+idx;});
+const tid=(itemSlug,i)=>"t_"+itemSlug+"_"+i;
+
+function phaseOf(itemSlug){
+  let curPhase=null,curTrack=null;
+  for(const p of PLAN){
+    if(p.track){curTrack=p.tname;}
+    if(p.phase){curPhase=p.pname;}
+    if(!p.phase&&!p.track&&p._slug===itemSlug)return `${curTrack} — ${curPhase}`;
+  }
+  return "";
+}
+
+function render(){
+  board.innerHTML="";
+  let dayCounter=0;
+  PLAN.forEach(item=>{
+    if(item.track){
+      const t=document.createElement("div");t.className="track-header";
+      t.innerHTML=`<span class="track-tag">Track ${item.track}</span><span class="track-name">${item.tname}</span>`;
+      board.appendChild(t);
+      const d=document.createElement("p");d.className="track-desc";d.textContent=item.tdesc;
+      board.appendChild(d);
+      return;
+    }
+    if(item.phase){
+      const p=document.createElement("div");p.className="phase";
+      p.innerHTML=`<span class="phase-tag">Block ${item.phase}</span><span class="phase-name">${item.pname}</span><span class="phase-range">${item.range}</span>`;
+      board.appendChild(p);return;
+    }
+    dayCounter++;
+    const wrap=document.createElement("div");wrap.className="day";wrap.dataset.slug=item._slug;
+    const spine=document.createElement("div");spine.className="spine";
+    spine.innerHTML=`<div class="node">${String(dayCounter).padStart(2,"0")}</div><div class="rail"></div>`;
+    const card=document.createElement("div");card.className="card";
+    let h=`<div class="card-head"><span class="theme">${item.theme}${item.star?' <span class="star">★</span>':''}</span>${item.split?`<span class="split">${item.split}</span>`:""}</div>`;
+    h+=`<ul class="tasks">`;
+    item.tasks.forEach((tk,i)=>{const id=tid(item._slug,i);const c=state[id]?"checked":"";
+      h+=`<li class="task"><input type="checkbox" id="${id}" ${c}><label for="${id}"><span class="box"></span><span class="t-row"><span class="kind k-${tk.k}">${tk.k}</span><span class="t-text">${tk.t}</span></span></label></li>`;});
+    h+=`</ul>`;
+    if(item.note)h+=`<div class="note">${item.note}</div>`;
+    card.innerHTML=h;
+    wrap.appendChild(spine);wrap.appendChild(card);board.appendChild(wrap);
+  });
+  board.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener("change",async()=>{
+      if(cb.checked)state[cb.id]=true;else delete state[cb.id];
+      await store.save(state);refresh();
+    });
+  });
+  refresh();
+}
+
+function refresh(){
+  const total=items.reduce((n,d)=>n+d.tasks.length,0);
+  let done=0,first=null;
+  items.forEach(d=>{
+    const ids=d.tasks.map((_,i)=>tid(d._slug,i));
+    const n=ids.filter(id=>state[id]).length;done+=n;
+    const row=board.querySelector(`.day[data-slug="${CSS.escape(d._slug)}"]`);if(!row)return;
+    row.classList.remove("complete","current");
+    if(n===d.tasks.length)row.classList.add("complete");
+    else if(first===null)first=d._slug;
+  });
+  if(first!==null){const row=board.querySelector(`.day[data-slug="${CSS.escape(first)}"]`);if(row)row.classList.add("current");}
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById("passing").textContent=done+"/"+total;
+  document.getElementById("pct").textContent=pct+"%";
+  const fill=document.getElementById("fill");fill.style.width=pct+"%";fill.classList.toggle("done",pct===100);
+  const note=document.getElementById("phaseNote");
+  note.textContent = pct===100 ? "✓ All three tracks complete" : first===null ? "" : "Current: "+phaseOf(first);
+}
+
+document.getElementById("reset").addEventListener("click",async()=>{
+  if(!confirm("Reset all progress?"))return;
+  await store.clear();state={};render();
+});
+
+(async()=>{
+  const loaded=await store.load();
+  if(loaded===null){
+    state={};
+    items.forEach(it=>{ if(it.done) state[tid(it._slug,0)]=true; });
+    await store.save(state);
+  } else {
+    state=loaded;
+  }
+  render();
+})();
+</script>
+</body>
+</html>
