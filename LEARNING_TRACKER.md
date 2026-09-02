@@ -32,7 +32,7 @@
 
 **Track:** 4 — Backend Build  
 **Phase:** O — Node.js & Express v5 Core — ✅ **COMPLETE + checkpoint PASSED (2026-09-02)**  
-**Current topic:** → **Phase P.1 — Advanced Sequelize queries + Repository pattern (TypeScript)** (next session)  
+**Current topic:** → **Phase P on-ramp: convert the whole codebase JS → TypeScript**, then P.1 advanced Sequelize queries + Repository pattern  (next session)  
 **Revise (spaced):** `isOperational` hides non-operational error messages · per-instance state vs horizontal scaling (Redis/S3/log-aggregation)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
@@ -258,6 +258,24 @@ Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 ---
 
 # Phase P — MySQL & Sequelize v6
+
+## 0. JS → TypeScript migration (on-ramp — requested 2026-09-02)
+**Status:** `TODO` — do this FIRST in Phase P (convert the whole existing codebase to TS)
+
+Why now: Phase P's service/repository layers are TS-first; converting the existing Express + Sequelize code gives end-to-end type safety (controllers, models, config, error shapes) and makes the repository pattern natural.
+
+Plan (incremental — keep the app running the whole time):
+- [ ] Install: `typescript`, `tsx`, `@types/node`, `@types/express`, `@types/jsonwebtoken`, `@types/multer`, `@types/cors`, `@types/compression`
+- [ ] `tsconfig.json` — ESM (`module`/`moduleResolution: NodeNext`), `strict: true`, `outDir`/`rootDir`, `allowJs` for incremental migration
+- [ ] Scripts: `dev` → `tsx watch src/server.ts`; `build` → `tsc`; `start` → `node dist/server.js`
+- [ ] Migrate leaf-first: utils → config → models → middleware → controllers → routes → server (rename `.js` → `.ts`, one at a time)
+- [ ] Type Sequelize models (`InferAttributes` / `InferCreationAttributes`) — the biggest lift
+- [ ] Type Express (`Request`/`Response`/`NextFunction`); augment `Request` with `user` via declaration merging (for `authMiddelWare`)
+- [ ] Config typed for free: `type Env = z.infer<typeof envSchema>`
+- [ ] Type `AppError`, the pino logger, `req.file` (multer)
+- [ ] Verify: `tsc` passes under `strict`, app boots, `/api-docs` still serves
+
+Watch-outs: under NodeNext, keep `.js` extensions in imports even in `.ts` source; Sequelize typing is the fiddly part; also fix the `middelware/` folder typo during the move.
 
 ## 1. Advanced Sequelize queries
 **Status:** `TODO`
