@@ -17,7 +17,7 @@ export const authMiddelWare = async (req, res, next) => {
     }
 
     try{
-        const decoded = jwt.verify(token, process.env.jwt_secret);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findByPk(decoded.id);
         if(!user){
             return res.status(401).json({ message: "Unauthorized 3" });

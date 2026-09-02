@@ -1,6 +1,6 @@
 import {Sequelize} from 'sequelize'
 
-const connection = new Sequelize("mysql://root:123@127.0.0.1:3306/practice",{
+const connection = new Sequelize(process.env.DB_URL,{
     // host : '127.0.0.1',
     // database : 'practice',
     // username : 'root',

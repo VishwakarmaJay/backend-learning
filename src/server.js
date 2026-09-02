@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import movieRouter from "./routes/movies.js";
 import { dbConnection } from "./config/db.js";
 import "./models/index.js";
+import "dotenv/config"; 
 import { Movie, User, WatchList } from "./models/index.js";
 import authRouter from "./routes/authRoute.js";
 import watchlistRouter from "./routes/watchlistRoute.js";
