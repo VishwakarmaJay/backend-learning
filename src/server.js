@@ -7,6 +7,8 @@ import { Movie, User, WatchList } from './models/index.js';
 import authRouter from './routes/authRoute.js';
 import watchlistRouter from './routes/watchlistRoute.js';
 import { authMiddelWare } from './middelware/authMiddelWare.js';
+import { errorHandler } from './middelware/errorHandler.js';
+import AppError from './utils/appError.js';
 config();
 
 dbConnection();
@@ -25,6 +27,7 @@ app.use(authMiddelWare)
 app.use("/movies", movieRouter )
 app.use("/watchlist", watchlistRouter)
 
+app.use(errorHandler)
 
 app.listen(3000,()=>{
     console.log("Server Started")

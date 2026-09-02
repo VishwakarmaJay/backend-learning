@@ -121,25 +121,28 @@ Mastery:
 ---
 
 ### 2. Error handling — global & typed
-**Status:** `TODO`
+**Status:** `IN PROGRESS`  (core built + verified 2026-09-02)
 
-- [ ] Create `AppError`
-- [ ] Understand HTTP error categories
-- [ ] Build global error middleware
-- [ ] Build `asyncHandler`
-- [ ] Handle operational vs programmer errors
-- [ ] Prevent leaked stack traces in production
-- [ ] Standardize API error response
-- [ ] Test failure paths
+- [x] Create `AppError` (extends Error; statusCode + isOperational)
+- [x] Understand HTTP error categories (400 vs 401 vs 404 vs 409 vs 500)
+- [x] Build global error middleware (4-arg, mounted last)
+- [ ] Build `asyncHandler` (optional on Express 5 — auto-forwards; still learn it for Express 4 code)
+- [x] Handle operational vs programmer errors (isOperational; log non-operational only)
+- [ ] Prevent leaked stack traces in production (message hidden; NODE_ENV-based stack split still TODO)
+- [x] Standardize API error response (`{ statusCode, message }`)
+- [x] Test failure paths (isolated harness verified 409/404/500; secret stayed server-side)
+
+Applied to: watchlistController ✓ · authController ✓ (register→409; login enumeration leak closed) · Express 5 auto-forward learned
+Security learned: user enumeration (equal responses) + timing attack (equal timing via dummy-hash — deferred to Phase Q)
 
 Mastery:
 
 ```text
-[ ] Explain
-[ ] Implement
-[ ] Debug
-[ ] Apply
-[ ] Defend
+[x] Explain
+[x] Implement
+[x] Debug
+[x] Apply     (watchlist + auth refactored & verified)
+[ ] Defend    (at Phase O checkpoint)
 ```
 
 ---
