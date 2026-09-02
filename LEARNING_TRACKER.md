@@ -174,10 +174,10 @@ Checkpoint:
 - [x] Structured logs (fields vs string interpolation; `err` serializer)
 - [x] Log levels (env `LOG_LEVEL`; filtering verified)
 - [x] Request correlation/request IDs (pino-http; `reqId` shared across a request's logs)
-- [ ] Helmet
-- [ ] CORS
-- [ ] Rate limiting
-- [ ] Compression
+- [x] Helmet (secure headers; removes X-Powered-By)
+- [ ] CORS (⚠️ was mounted wide-open `*` — wrong call signature; fix = single options object)
+- [x] Rate limiting (authLimiter 5/15min on /auth; 429 verified — brute-force shield)
+- [x] Compression (gzip responses)
 - [x] Avoid logging secrets/tokens (pino `redact` — verified Authorization/cookie → `[REDACTED]`)
 
 Debug lesson: `pino({transport})` — transport is a KEY inside options, not the options object (silent raw-JSON bug).

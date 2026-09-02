@@ -10,6 +10,11 @@ import { authMiddelWare } from "./middelware/authMiddelWare.js";
 import { errorHandler } from "./middelware/errorHandler.js";
 import logger from "./utils/logger.js";
 import pinoHttp from "pino-http";
+import helmet from "helmet";
+import cors from "cors";
+import compression from "compression";
+import authLimiter from "./utils/authLimiter.js";
+
 
 config();
 
@@ -22,11 +27,14 @@ dbConnection();
 const app = express();
 
 app.use(pinoHttp({ logger }));
+app.use(helmet());
+app.use(cors('http://localhost:4200',  {credentials: true }));
+app.use(compression());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/auth", authRouter);
+app.use("/auth",authLimiter, authRouter);
 app.use(authMiddelWare);
 app.use("/movies", movieRouter);
 app.use("/watchlist", watchlistRouter);
