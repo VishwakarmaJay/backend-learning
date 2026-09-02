@@ -32,7 +32,7 @@
 
 **Track:** 4 — Backend Build  
 **Phase:** O — Node.js & Express v5 Core  
-**Current topic:** Node.js internals — event loop, libuv, streams, Buffer  
+**Current topic:** Node.js internals — `REVIEW` (core demonstrated 2026-09-02); next → Error handling (AppError, asyncHandler, global error middleware)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
 ### Already demonstrated
@@ -84,36 +84,38 @@
 ## Phase O — Node.js & Express v5 Core
 
 ### 1. Node.js internals — event loop & streams
-**Status:** `IN PROGRESS`
+**Status:** `REVIEW`  (core demonstrated 2026-09-02)
 
 Tasks:
 
-- [ ] Explain Node.js process model
+- [x] Explain Node.js process model
 - [ ] Explain V8 at a useful practical level
-- [ ] Explain libuv
-- [ ] Explain event loop
-- [ ] Explain event loop phases
-- [ ] Explain microtasks vs macrotasks
-- [ ] Explain `process.nextTick`
-- [ ] Explain timers
-- [ ] Explain I/O callbacks
-- [ ] Explain why CPU-heavy work blocks Node
-- [ ] Explain `fs`
-- [ ] Explain `Buffer`
-- [ ] Explain streams
-- [ ] Implement readable stream example
-- [ ] Implement writable/transform stream example
-- [ ] Explain backpressure
-- [ ] Debug an event-loop ordering exercise
+- [x] Explain libuv
+- [x] Explain event loop
+- [ ] Explain event loop phases (named phases + setImmediate vs setTimeout — TODO)
+- [x] Explain microtasks vs macrotasks
+- [x] Explain `process.nextTick`
+- [x] Explain timers
+- [x] Explain I/O callbacks
+- [x] Explain why CPU-heavy work blocks Node
+- [x] Explain `fs`
+- [x] Explain `Buffer`
+- [x] Explain streams
+- [x] Implement readable stream example
+- [x] Implement writable stream example (Transform stream — TODO)
+- [x] Explain backpressure (built drain protocol; observed 370MB→69MB RSS)
+- [x] Debug an event-loop ordering exercise
+
+Remaining before DONE: V8 practical model · named event-loop phases · a Transform stream · apply streams in the movie/watchlist project · Defend (interview Qs)
 
 Mastery:
 
 ```text
-[ ] Explain
-[ ] Implement
-[ ] Debug
-[ ] Apply
-[ ] Defend
+[x] Explain
+[x] Implement
+[x] Debug
+[ ] Apply     (labs only — not yet used in the project)
+[ ] Defend    (not yet tested with interview questions)
 ```
 
 ---
@@ -1017,7 +1019,7 @@ Application
 
 | Date | Phase | Topic | Score | Weak Areas | Action |
 |---|---|---|---:|---|---|
-|  |  |  |  |  |  |
+| 2026-09-02 | O | Node internals: event loop & streams | 11/15 warm-up | nextTick vs Promise priority; thread-pool ≠ arbitrary JS; serialization math | Revisit setImmediate vs setTimeout |
 
 ---
 
@@ -1045,7 +1047,14 @@ Better:
 
 | Priority | Area | Debt | Why It Matters | Planned Phase | Status |
 |---|---|---|---|---|---|
+| P0 | Secrets | `.env` is committed to git (holds `jwt_secret`, DB URL) | Secrets in source control; stay in history even after removal → must untrack + rotate | Now / Phase O.7 | TODO |
+| P1 | Git hygiene | No root `.gitignore`; `node_modules/`, `.env`, lab `output.txt` untracked/committed | Risk of committing secrets & huge files | Now | TODO |
+| P1 | Security | `bcryptjs` (pure JS) blocks the event loop ~100ms per hash in register/login | Native `bcrypt` (already installed) offloads to libuv thread pool | Phase Q | TODO |
 | P1 | Naming | `middelware` naming | Reduces clarity / consistency | Refactor checkpoint | TODO |
+| P2 | Deps | Both `bcrypt` and `bcryptjs` installed | Redundant; pick one (prefer native `bcrypt`) | Phase Q | TODO |
+| P2 | Config | DB creds hardcoded in `src/config/db.js` (`mysql://root:123@…`); `.env db_url` ignored | Secrets in source; env not actually used | Phase O.7 | TODO |
+| P3 | Naming | `.env` key `jwt_expries_in` typo (→ `jwt_expires_in`) | Confusing / error-prone when read | Phase O.7 | TODO |
+| P3 | Build | `postinstall: "prisma skills sync \|\| exit 0"` references Prisma (stack is Sequelize) | Dead/odd script, fails silently | Anytime | TODO |
 
 ---
 
@@ -1162,6 +1171,41 @@ Score: /10
 ### Next session
 - 
 ```
+
+---
+
+## 2026-09-02 — Node internals: event loop, libuv, streams, Buffer
+
+### Learned
+- Single-thread event loop; non-blocking I/O via hand-off; `await` unwraps a Promise (envelope vs contents)
+- Priority ladder: sync stack → `process.nextTick` → Promise microtasks → macrotasks (timers/IO/setImmediate); microtask queue fully drained between macrotasks
+- Why CPU-heavy JS blocks everything (serialization); libuv thread pool runs native ops (fs/dns/crypto), NOT arbitrary JS (→ Worker Threads for that)
+- `Buffer` = off-heap raw bytes; `.length` is bytes not chars
+- Streams process data in chunks (flat memory); backpressure via `write()` bool + `drain`; `pipeline`/`pipe` handle it
+
+### Implemented
+- Event-loop blocking demo (100ms timer fired at 2005ms behind a 2s busy-loop)
+- Backpressure lab: naive vs drain-aware writer — naive RSS peak 370MB vs fixed 69MB for identical 191MB output; learned heap vs RSS (Buffers hide from `heapUsed`)
+
+### Quiz
+Warm-up 11/15; ordering puzzles 5/5 then 4/5 (nextTick miss); sort 5/6 (thread-pool ≠ JS)
+
+### Mastery (Node internals)
+- [x] Explain  [x] Implement  [x] Debug  [ ] Apply  [ ] Defend
+
+### Mistakes (patterns)
+- Attributed timer delay to macrotask ordering rather than a blocked call stack
+- Assumed libuv thread pool can offload arbitrary JS CPU work (it can't)
+- Inverted nextTick vs Promise priority
+
+### Technical debt found
+- `.env` committed to git; no root `.gitignore`; hardcoded DB creds in db.js; bcryptjs blocks loop; dual bcrypt libs; `jwt_expries_in` typo; odd prisma postinstall
+
+### Revision required
+- setImmediate vs setTimeout / named event-loop phases; Transform streams; apply streams in the project
+
+### Next session
+- Phase O topic 2 — Error handling: `AppError`, `asyncHandler`, global error middleware (refactor the movie/watchlist controllers)
 
 ---
 

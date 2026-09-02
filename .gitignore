@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# env & secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+logs/
+
+# lab / scratch output
+output.txt
+*.tmp
+
+# build output
+dist/
+build/
+coverage/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
