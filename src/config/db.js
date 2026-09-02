@@ -1,5 +1,7 @@
 import {Sequelize} from 'sequelize'
 import {env} from "../config/env.js";
+import logger from '../utils/logger.js';
+import AppError from "../utils/appError.js";
 
 
 const connection = new Sequelize(env.DB_URL,{
@@ -14,10 +16,11 @@ const connection = new Sequelize(env.DB_URL,{
 export async function dbConnection () {
     try {
         await connection.authenticate();
-        console.log("Connection has Established");
+        logger.info("Connection has Established");
     }
     catch(e){
-        console.log(`Errror is ${e}`);
+        logger.error(e, "Unable to connect to the database");
+        throw new AppError("Database Connection Failed",500);
     }
 }
 
