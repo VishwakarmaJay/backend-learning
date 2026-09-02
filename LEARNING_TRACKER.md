@@ -222,15 +222,20 @@ Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 ---
 
 ### 7. Environment configuration & secrets
-**Status:** `TODO`
+**Status:** `REVIEW`  (core done + verified 2026-09-02)
 
-- [ ] Validate environment variables
-- [ ] Create typed config layer
-- [ ] Fail fast on invalid config
-- [ ] Separate development/test/production config
-- [ ] Secret storage concepts
-- [ ] Never commit secrets
-- [ ] Rotate credentials conceptually
+- [x] Validate environment variables (Zod schema in `src/config/env.js`, `safeParse`)
+- [x] Create typed config layer (`export const env`; every module reads `env.*`, not `process.env`)
+- [x] Fail fast on invalid config (verified: missing JWT_SECRET → clear error + exit 1)
+- [x] Separate development/test/production config (`NODE_ENV` enum)
+- [x] Secret storage concepts (env → secrets manager in prod; access control + rotation)
+- [x] Never commit secrets (.gitignore + untracked; ⚠️ still in HISTORY → rotate JWT_SECRET)
+- [x] Rotate credentials conceptually (config-not-constants; key-id for graceful JWT rotation)
+
+Implemented: `config/env.js` loads dotenv first + Zod-validates; migrated ALL reads (generateToken, authMiddelWare, logger, db.js) to `env.*`; `db.js` uses `env.DB_URL` (hardcoded creds gone). Verified: fail-fast (exit 1) + `LOG_LEVEL=warn` now applied (dotenv ordering bug dead) + circular-dep bug fixed (env.js depends on nothing app-level).
+Debug lesson: config module must be the ROOT of the import graph — importing the logger into it caused a circular dep (`Cannot access 'env' before initialization`); use `console.error`.
+Nits: `z.prettifyError()` for output; `.min(1)` on JWT_SECRET/DB_URL
+Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 
 ---
 
@@ -1062,13 +1067,13 @@ Better:
 
 | Priority | Area | Debt | Why It Matters | Planned Phase | Status |
 |---|---|---|---|---|---|
-| P0 | Secrets | `.env` is committed to git (holds `jwt_secret`, DB URL) | Secrets in source control; stay in history even after removal → must untrack + rotate | Now / Phase O.7 | TODO |
-| P1 | Git hygiene | No root `.gitignore`; `node_modules/`, `.env`, lab `output.txt` untracked/committed | Risk of committing secrets & huge files | Now | TODO |
+| P0 | Secrets | `.env` is committed to git (holds `jwt_secret`, DB URL) | Secrets in source control; stay in history even after removal → must untrack + rotate | Now / Phase O.7 | ⚠️ PARTIAL — untracked + gitignored; still in HISTORY → rotate JWT_SECRET |
+| P1 | Git hygiene | No root `.gitignore`; `node_modules/`, `.env`, lab `output.txt` untracked/committed | Risk of committing secrets & huge files | Now | ✅ RESOLVED (.gitignore + `uploads/`) |
 | P1 | Security | `bcryptjs` (pure JS) blocks the event loop ~100ms per hash in register/login | Native `bcrypt` (already installed) offloads to libuv thread pool | Phase Q | TODO |
 | P1 | Naming | `middelware` naming | Reduces clarity / consistency | Refactor checkpoint | TODO |
 | P2 | Deps | Both `bcrypt` and `bcryptjs` installed | Redundant; pick one (prefer native `bcrypt`) | Phase Q | TODO |
-| P2 | Config | DB creds hardcoded in `src/config/db.js` (`mysql://root:123@…`); `.env db_url` ignored | Secrets in source; env not actually used | Phase O.7 | TODO |
-| P3 | Naming | `.env` key `jwt_expries_in` typo (→ `jwt_expires_in`) | Confusing / error-prone when read | Phase O.7 | TODO |
+| P2 | Config | DB creds hardcoded in `src/config/db.js` (`mysql://root:123@…`); `.env db_url` ignored | Secrets in source; env not actually used | Phase O.7 | ✅ RESOLVED (`env.DB_URL`) |
+| P3 | Naming | `.env` key `jwt_expries_in` typo (→ `jwt_expires_in`) | Confusing / error-prone when read | Phase O.7 | ✅ RESOLVED (`JWT_EXPIRES_IN`) |
 | P3 | Build | `postinstall: "prisma skills sync \|\| exit 0"` references Prisma (stack is Sequelize) | Dead/odd script, fails silently | Anytime | TODO |
 
 ---

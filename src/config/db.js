@@ -1,6 +1,8 @@
 import {Sequelize} from 'sequelize'
+import {env} from "../config/env.js";
 
-const connection = new Sequelize(process.env.DB_URL,{
+
+const connection = new Sequelize(env.DB_URL,{
     // host : '127.0.0.1',
     // database : 'practice',
     // username : 'root',

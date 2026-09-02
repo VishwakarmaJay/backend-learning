@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import {env} from "../config/env.js";
+
 export const authMiddelWare = async (req, res, next) => {
 
     let token;
@@ -17,7 +19,7 @@ export const authMiddelWare = async (req, res, next) => {
     }
 
     try{
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, env.JWT_SECRET);
         const user = await User.findByPk(decoded.id);
         if(!user){
             return res.status(401).json({ message: "Unauthorized 3" });
