@@ -1,0 +1,112 @@
+openapi: 3.0.3
+info:
+  title: Movie App API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [first_name, last_name, email, password]
+      properties:
+        first_name: 
+         type: string 
+         example: Jay 
+        last_name:   
+          type: string 
+          example: V 
+        email:      
+          type: string
+          format: email 
+        password:   
+          type: string
+          format: password
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:      
+          type: string
+          format: email 
+        password:   
+          type: string
+          format: password
+          minLength: 8
+
+
+
+    AuthResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            name:   
+              type: string 
+            email:  
+              type: string
+              format: email 
+        token: 
+          type: string 
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 409
+        message:
+          type: string
+          example: User Already Exist
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

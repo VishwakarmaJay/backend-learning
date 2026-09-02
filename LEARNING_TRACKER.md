@@ -148,22 +148,26 @@ Mastery:
 ---
 
 ### 3. Swagger / OpenAPI
-**Status:** `TODO`
+**Status:** `REVIEW`  (core done + verified 2026-09-02)
 
-- [ ] Understand OpenAPI
-- [ ] Define schemas
-- [ ] Generate Swagger/OpenAPI docs
-- [ ] Add route documentation
-- [ ] Add authentication documentation
-- [ ] Add request/response schemas
-- [ ] Integrate Swagger UI
-- [ ] Connect validation schema and API contract where appropriate
+- [x] Understand OpenAPI (contract; paths / components / securitySchemes; codegen payoff → Phase T)
+- [x] Define schemas (RegisterRequest, LoginRequest, AuthResponse, Error via `$ref`)
+- [x] Generate Swagger/OpenAPI docs (hand-authored YAML `src/swagger.yaml`, OpenAPI 3.0.3)
+- [x] Add route documentation (/auth/register, /auth/login — summaries + Auth tag)
+- [x] Add authentication documentation (bearerAuth scheme; Authorize button renders)
+- [x] Add request/response schemas (requestBody + 201/409/200/401)
+- [x] Integrate Swagger UI (swagger-ui-express at /api-docs, mounted before auth guard = public)
+- [ ] Connect validation schema and API contract (Zod-to-OpenAPI — future)
 
 Checkpoint:
+- [x] Document auth API (register + login — rendered in Swagger UI, verified)
+- [ ] Document movie API (poster upload — replicate pattern)
+- [ ] Document watchlist API (TODO)
 
-- [ ] Document auth API
-- [ ] Document movie API
-- [ ] Document watchlist API
+Verified: /api-docs renders (Movie App API, OAS 3.0), Auth tag both endpoints, Authorize button present.
+Debug lesson: malformed YAML fails-fast at load ("Map keys must be unique at line 84" — copy-paste dup).
+Nit: `server.js` still has a redundant `import "dotenv/config"` (env.js owns env loading)
+Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 
 ---
 
