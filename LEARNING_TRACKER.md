@@ -168,17 +168,20 @@ Checkpoint:
 ---
 
 ### 4. Logging + security middleware
-**Status:** `TODO`
+**Status:** `IN PROGRESS`  (logging half done + verified 2026-09-02)
 
-- [ ] Pino
-- [ ] Structured logs
-- [ ] Log levels
-- [ ] Request correlation/request IDs
+- [x] Pino (structured JSON; pretty in dev via pino-pretty, raw JSON in prod)
+- [x] Structured logs (fields vs string interpolation; `err` serializer)
+- [x] Log levels (env `LOG_LEVEL`; filtering verified)
+- [x] Request correlation/request IDs (pino-http; `reqId` shared across a request's logs)
 - [ ] Helmet
 - [ ] CORS
 - [ ] Rate limiting
 - [ ] Compression
-- [ ] Avoid logging secrets/tokens
+- [x] Avoid logging secrets/tokens (pino `redact` — verified Authorization/cookie → `[REDACTED]`)
+
+Debug lesson: `pino({transport})` — transport is a KEY inside options, not the options object (silent raw-JSON bug).
+Remaining: security middleware (Helmet, CORS, rate-limit, compression) · fix `pino-http` mount order · restore/migrate `.sync()` (→ Phase P migrations)
 
 ---
 
