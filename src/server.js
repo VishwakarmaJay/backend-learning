@@ -28,7 +28,7 @@ const app = express();
 
 app.use(pinoHttp({ logger }));
 app.use(helmet());
-app.use(cors('http://localhost:4200',  {credentials: true }));
+app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
 app.use(compression());
 
 app.use(express.json());
