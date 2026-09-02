@@ -22,3 +22,15 @@ export const addPoster = async (req, res) => {
 
   res.status(200).json({ data: movie, message: "Poster added successfully" });
 };
+
+export const getMovie = async (req, res) => {
+  const { id } = req.params;
+
+  const movie = await Movie.findByPk(id);
+
+  if (!movie) {
+    throw new AppError( "Movie not found",404);
+  }
+
+  res.status(200).json({ data: movie, message: "Movie fetched successfully" });
+};

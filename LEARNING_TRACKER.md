@@ -31,8 +31,9 @@
 # Current Position
 
 **Track:** 4 — Backend Build  
-**Phase:** O — Node.js & Express v5 Core  
-**Current topic:** Node.js internals — `REVIEW` (core demonstrated 2026-09-02); next → Error handling (AppError, asyncHandler, global error middleware)  
+**Phase:** O — Node.js & Express v5 Core — ✅ **COMPLETE + checkpoint PASSED (2026-09-02)**  
+**Current topic:** → **Phase P.1 — Advanced Sequelize queries + Repository pattern (TypeScript)** (next session)  
+**Revise (spaced):** `isOperational` hides non-operational error messages · per-instance state vs horizontal scaling (Redis/S3/log-aggregation)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
 ### Already demonstrated
@@ -244,18 +245,15 @@ Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 ---
 
 ### 8. Phase O checkpoint
-**Status:** `TODO`
+**Status:** `DONE` (2026-09-02) — PASS, 2 flagged revision items
 
-- [ ] 10 concept questions
-- [ ] 2 debugging scenarios
-- [ ] Mini REST API
-- [ ] Zod validation
-- [ ] AppError
-- [ ] async handler
-- [ ] Swagger/OpenAPI
-- [ ] Pino
-- [ ] security middleware
-- [ ] checkpoint interview
+- [x] Concepts (8 Q): 72% → remediated pass (config + uploads cleared; **`isOperational` message-hiding = revise**)
+- [x] Debugging (2): PASS — middleware order ✓; missing-`return` double-send (found fix; sharpen naming the mechanism)
+- [x] Implementation: `GET /movies/:id` + OpenAPI — code correct; YAML Movie-schema indent bug (3rd YAML whitespace slip)
+- [ ] Architecture: **WEAK ~30%** — per-instance state vs horizontal scaling: in-mem rate limiter → Redis, local disk → S3, JWT = stateless (OK), logs → aggregation → **Phase R + System Design**
+- [x] Interview (3): strong — bcrypt (salt+cost) ✓, JWT stateless ✓, event loop (brief)
+
+**Verdict: PASS.** Revision items → (1) `isOperational` hides non-operational messages; (2) per-instance state is the enemy of horizontal scaling.
 
 ---
 
@@ -1043,6 +1041,7 @@ Application
 | Date | Phase | Topic | Score | Weak Areas | Action |
 |---|---|---|---:|---|---|
 | 2026-09-02 | O | Node internals: event loop & streams | 11/15 warm-up | nextTick vs Promise priority; thread-pool ≠ arbitrary JS; serialization math | Revisit setImmediate vs setTimeout |
+| 2026-09-02 | O | **Phase O checkpoint** | PASS (concepts 72%; arch ~30%) | isOperational message-hiding; horizontal scaling / shared state | Redis/S3/log-agg → Phase R + System Design |
 
 ---
 

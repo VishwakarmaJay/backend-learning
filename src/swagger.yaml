@@ -49,6 +49,30 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+
+  /movies/{id}:
+    get:
+      tags: [Movies]
+      summary: Get a movie by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movie retrieved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Movie' }
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 components:
   schemas:
     RegisterRequest:
@@ -80,6 +104,50 @@ components:
           type: string
           format: password
           minLength: 8
+
+    Movie:
+    type: object
+    properties:
+      id:
+        type: integer
+        example: 1
+
+      title:
+        type: string
+        example: "Inception"
+
+      overview:
+        type: string
+        nullable: true
+        example: "A thief who steals corporate secrets through dream-sharing technology."
+
+      releaseYear:
+        type: string
+        example: "2010"
+
+      genres:
+        type: array
+        items:
+          type: string
+        example:
+          - "Sci-Fi"
+          - "Thriller"
+
+      runtime:
+        type: integer
+        nullable: true
+        example: 148
+
+      posterUrl:
+        type: string
+        format: uri
+        nullable: true
+        example: "https://example.com/posters/inception.jpg"
+
+      createdBy:
+        type: integer
+        example: 5
+        
 
 
 

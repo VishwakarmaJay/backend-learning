@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { addPoster } from "../controller/movieController.js";
+import { addPoster,getMovie } from "../controller/movieController.js";
 import AppError from "../utils/appError.js";
 import { randomUUID } from "node:crypto";
 
@@ -27,9 +27,7 @@ const upload = multer({
 
 const movieRouter = express.Router();
 
-movieRouter.get("/", (req, res) => {
-  res.json({ message: "Hello" });
-});
+movieRouter.get("/:id", getMovie);
 
 movieRouter.post("/:id/poster", upload.single("poster"), addPoster);
 
