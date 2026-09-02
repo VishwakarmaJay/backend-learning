@@ -16,7 +16,7 @@ export const addPoster = async (req, res) => {
     throw new AppError( "Movie not found",404);
   }
 
-  movie.posterUrl = req.file.originalname;
+  movie.posterUrl = req.file.filename;
   await movie.save();
 
 

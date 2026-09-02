@@ -35,9 +35,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/auth",authLimiter, authRouter);
-app.use("/movies", movieRouter);
 app.use(authMiddelWare);
-
+app.use("/movies", movieRouter);
 app.use("/watchlist", watchlistRouter);
 
 app.use(errorHandler);
