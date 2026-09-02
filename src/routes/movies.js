@@ -1,9 +1,29 @@
-import express  from "express";
+import express from "express";
+import multer from "multer";
+import { addPoster } from "../controller/movieController.js";
+import AppError from "../utils/appError.js";
 
-const movieRouter = express.Router()
+const LIMIT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
-movieRouter.get("/",(req, res)=>{
-    res.json({message : "Hello"})
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: LIMIT_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new AppError( "Only image files allowed",400));
+    }
+  },
 });
+
+const movieRouter = express.Router();
+
+movieRouter.get("/", (req, res) => {
+  res.json({ message: "Hello" });
+});
+
+movieRouter.post("/:id/poster", upload.single("poster"), addPoster);
 
 export default movieRouter;

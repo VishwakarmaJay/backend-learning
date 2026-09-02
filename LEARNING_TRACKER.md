@@ -1215,6 +1215,40 @@ Warm-up 11/15; ordering puzzles 5/5 then 4/5 (nextTick miss); sort 5/6 (thread-p
 
 ---
 
+## 2026-09-02 (cont.) — Error handling · Logging · Security middleware
+
+### Learned
+- Global error handling: `AppError` (statusCode + isOperational), 4-arg middleware mounted last, operational-vs-programmer errors, leak prevention
+- Express 5 auto-forwards rejected async handlers → no `asyncHandler`/try-catch needed (vs Express 4)
+- HTTP status semantics: 400 vs 401 vs 404 vs 409 (Conflict)
+- Security: user enumeration (equal responses on both login branches) + timing attack (dummy-hash mitigation → Phase Q)
+- Pino structured logging: levels, env `LOG_LEVEL`, pretty(dev)/JSON(prod), `err` serializer, `pino-http` reqId correlation, `redact` for secrets
+- Security middleware: Helmet (headers, removes X-Powered-By), CORS (browser-only enforcement, allowlist ≠ firewall), rate limiting (brute-force shield), compression
+
+### Implemented / Applied
+- `errorHandler.js` + `appError.js`; refactored watchlistController + authController (dropped try/catch, correct codes, enumeration fix)
+- `logger.js` (pino + pino-pretty + redact); `pino-http` mounted; errorHandler logs structured
+- `server.js`: helmet, cors, compression, `authLimiter` (5/15min on /auth)
+- Verified via isolated harnesses: 409/404/500 shapes + secret non-leak; pretty/JSON/level logging; Authorization/cookie → `[REDACTED]`; CORS wide-open bug caught
+
+### Debug lessons (patterns)
+- ReferenceError from incomplete refactor (missing import + missing `next` param) masked the real error as a 500
+- "Works but silently wrong": pino `transport` must be a KEY inside options; `cors()` takes ONE options object (a string arg → wildcard `*`)
+- Test the REAL path, not just an isolated probe (green `/boom`, broken watchlist)
+
+### Mastery
+- Error handling: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
+- Logging: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
+- Security middleware: [x] Explain [x] Implement [x] Debug [~] Apply (CORS fix pending) [ ] Defend
+
+### Technical debt (still open)
+- `.env` still in git HISTORY (rotate `jwt_secret`) · hardcoded `db.js` creds · `bcryptjs` blocks loop · dual bcrypt libs · `.sync()` commented (→ Phase P migrations) · no general rate limiter
+
+### Next session
+- Phase O topic 5 — File uploads (Multer): multipart/form-data, validation, size/MIME limits, storage, presigned URLs
+
+---
+
 # Definition of Done
 
 A phase should not be marked `DONE` unless:
