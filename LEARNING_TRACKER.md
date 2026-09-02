@@ -186,30 +186,38 @@ Remaining: security middleware (Helmet, CORS, rate-limit, compression) · fix `p
 ---
 
 ### 5. File uploads
-**Status:** `TODO`
+**Status:** `REVIEW`  (core done + verified 2026-09-02)
 
-- [ ] Understand multipart/form-data
-- [ ] Multer
-- [ ] File validation
-- [ ] Size limits
-- [ ] MIME/type handling
-- [ ] Object storage
-- [ ] Presigned upload URLs
-- [ ] Secure download strategy
-- [ ] Failure cleanup
+- [x] Understand multipart/form-data (boundary-separated parts; why express.json can't parse it)
+- [x] Multer (memoryStorage vs diskStorage; req.file / req.files)
+- [x] File validation (fileFilter allow-list: jpeg/png/webp)
+- [x] Size limits (2MB fileSize limit)
+- [x] MIME/type handling (client mimetype gate; magic-byte verification deferred — spoofable)
+- [ ] Object storage (concept learned — S3; not implemented, no cloud yet)
+- [ ] Presigned upload URLs (concept learned — client uploads direct to S3; impl → capstone)
+- [ ] Secure download strategy (not yet)
+- [ ] Failure cleanup (not yet — delete orphaned files on error)
+
+Implemented: `POST /movies/:id/poster` → diskStorage, UUID filename (not originalname), `posterUrl` = generated key; files verified in `uploads/` (gitignored)
+Remaining before DONE: Multer `LIMIT_FILE_SIZE` → 413 · magic-byte MIME check · secure download · orphan cleanup · Defend
+Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 
 ---
 
 ### 6. Transactional email
-**Status:** `TODO`
+**Status:** `REVIEW`  (core done + verified 2026-09-02)
 
-- [ ] Email provider SDK
-- [ ] Email template
-- [ ] Configuration
-- [ ] Sandbox vs production
-- [ ] Bounce handling
-- [ ] Retry strategy
-- [ ] Move sending to async queue later
+- [x] Email provider SDK (Nodemailer + Ethereal test transport; verified preview URL)
+- [x] Email template (welcome HTML with name)
+- [x] Configuration (transporter setup; Ethereal creds runtime-generated; real provider → Topic 7)
+- [x] Sandbox vs production (Ethereal now; swap transport for real provider in prod — same API)
+- [ ] Bounce handling (provider-specific — deferred)
+- [ ] Retry strategy (comes with the queue — Phase R)
+- [ ] Move sending to async queue later (seam built: non-fatal send after response → BullMQ in Phase R)
+
+Implemented: `services/email.js` `sendWelcomeEmail` — self-contained try/catch (never throws to caller); called in `register` after the response. Verified: real Ethereal send → preview URL logged.
+Notes/debt: top-level `await createTestAccount()` couples startup to network (→ lazy/config in Topic 7); prefer `logger.error({err}, …)`; escape user input in email HTML
+Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 
 ---
 
@@ -1035,7 +1043,8 @@ Record the **pattern**, not just the individual bug.
 
 | Date | Topic | Mistake | Root Cause | Correct Mental Model | Revisit |
 |---|---|---|---|---|---|
-|  |  |  |  |  |  |
+| 2026-09-02 | Config/env (ESM) | `LOG_LEVEL` in `.env` ignored by logger | `dotenv.config()` ran AFTER ESM imports; `logger.js` reads `process.env` at import time → undefined | ESM imports fully evaluate before the importing module's body; load env before any import that reads it (`import "dotenv/config"` first, or `node --env-file`) | Phase O.7 — centralize + validate config |
+| 2026-09-02 | Refactors | Incomplete pattern fixes (missing import ×2, half-applied AppError arg swap) | Fixed the flagged instance, not every instance | When fixing a pattern bug, `grep` every call site and fix them together | ongoing |
 
 Examples:
 

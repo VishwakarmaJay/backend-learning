@@ -2,6 +2,7 @@ import { User } from "../models/index.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/generateToken.js";
 import AppError from "../utils/appError.js";
+import { sendWelcomeEmail } from "../services/email.js";
 
 const register = async (req, res) => {
   const { first_name, last_name, email, password } = req.body;
@@ -28,13 +29,15 @@ const register = async (req, res) => {
 
   const token = generateToken(user.id, res);
 
-  return res.status(201).json({
+  res.status(201).json({
     data: {
       name: first_name,
       email: email,
     },
     token: token,
   });
+
+  await sendWelcomeEmail(email, first_name);
 };
 
 const login = async (req, res) => {
