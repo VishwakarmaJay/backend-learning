@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import bcrypt from "bcryptjs";
-import connection, { dbConnection } from "./config/db.js";
-import { User, Movie, WatchList } from "./models/index.js";
+import connection, { dbConnection } from "./config/db";
+import { User, Movie, WatchList } from "./models/index";
 
 config();
 
@@ -76,7 +76,7 @@ async function seed() {
 
   const statuses = ["watching", "completed", "plan_to_watch"];
 
-  const watchlistEntries = [];
+  const watchlistEntries: import("@sequelize/core").CreationAttributes<WatchList>[] = [];
   createdUsers.forEach((user) => {
     createdMovies.forEach((movie, i) => {
       if ((user.id + movie.id) % 2 === 0) {

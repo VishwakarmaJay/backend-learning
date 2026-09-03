@@ -1,6 +1,8 @@
-import logger from "../utils/logger.js";
+import { NextFunction, Request, Response } from "express";
+import AppError from "../utils/appError";
+import logger from "../utils/logger";
 
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err : AppError, req : Request, res : Response, next : NextFunction) => {
   if (!err.isOperational) {
     logger.error({ err, method: req.method, url: req.url }, "unexpected error");
   }

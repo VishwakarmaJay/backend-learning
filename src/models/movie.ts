@@ -38,7 +38,7 @@ export class Movie extends Model<
 
   @Attribute(DataTypes.STRING)
   @NotNull
-  declare release_year: string;
+  declare releaseYear: string;
 
   @Attribute(DataTypes.JSON)
   declare genres: object | null;
@@ -47,7 +47,7 @@ export class Movie extends Model<
   declare runtime: number | null;
 
   @Attribute(DataTypes.STRING)
-  declare poster_url: string | null;
+  declare posterUrl: string | null;
 
   // Foreign key: movies.createdBy -> users.id
   @Attribute(DataTypes.INTEGER)

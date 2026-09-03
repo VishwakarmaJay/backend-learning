@@ -1,7 +1,8 @@
 import jwt, { type SignOptions } from 'jsonwebtoken'
 import {env} from "../config/env";
+import { Response } from 'express';
 
-export const generateToken = (userId : string, res : any) =>{
+export const generateToken = (userId: number, res : Response) =>{
 
     const payLoad = { id: userId }
     const options: SignOptions = {

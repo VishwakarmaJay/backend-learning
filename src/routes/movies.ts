@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
-import { addPoster,getMovie } from "../controller/movieController.js";
-import AppError from "../utils/appError.js";
+import { addPoster,getMovie } from "../controller/movieController";
+import AppError from "../utils/appError";
 import { randomUUID } from "node:crypto";
 
 const LIMIT_FILE_SIZE = 2 * 1024 * 1024; // 2MB

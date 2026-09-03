@@ -1,5 +1,5 @@
 import nodemailer, { TestAccount, Transporter } from "nodemailer";
-import logger from "../utils/logger.js";
+import logger from "../utils/logger";
 import AppError from "../utils/appError";
 
 const testAccount : TestAccount= await nodemailer.createTestAccount();

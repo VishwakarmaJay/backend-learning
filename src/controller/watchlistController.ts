@@ -1,10 +1,11 @@
-import { User, Movie, WatchList } from "../models/index.js";
-import AppError from "../utils/appError.js";
+import { Request, Response } from "express";
+import { User, Movie, WatchList } from "../models/index";
+import AppError from "../utils/appError";
 
-export const addToWatchlist = async (req, res) => {
+export const addToWatchlist = async (req : Request, res : Response) => {
   const { movieId, status, rating, notes } = req.body;
 
-  const user = await User.findByPk(req.user.id);
+  const user  = await User.findByPk(req.user.id);
   if (!user) {
     throw new AppError("User not found", 404);
   }

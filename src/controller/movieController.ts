@@ -1,8 +1,9 @@
-import logger from "../utils/logger.js";
-import { Movie } from "../models/index.js";
-import AppError from "../utils/appError.js";
+import logger from "../utils/logger";
+import { Movie } from "../models/index";
+import AppError from "../utils/appError";
+import { Request, Response } from "express";
 
-export const addPoster = async (req, res) => {
+export const addPoster = async (req : Request, res : Response) => {
 
   const { id } = req.params;
 
@@ -23,7 +24,7 @@ export const addPoster = async (req, res) => {
   res.status(200).json({ data: movie, message: "Poster added successfully" });
 };
 
-export const getMovie = async (req, res) => {
+export const getMovie = async (req : Request, res : Response) => {
   const { id } = req.params;
 
   const movie = await Movie.findByPk(id);
