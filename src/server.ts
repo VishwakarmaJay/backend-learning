@@ -12,6 +12,7 @@ import pinoHttp from "pino-http";
 import helmet from "helmet";
 import cors from "cors";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import authLimiter from "./utils/authLimiter";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yaml";
@@ -38,6 +39,7 @@ app.use(compression());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use("/auth",authLimiter, authRouter);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
