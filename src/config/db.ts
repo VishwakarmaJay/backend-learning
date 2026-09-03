@@ -1,10 +1,10 @@
 import {Sequelize} from 'sequelize'
-import {env} from "../config/env.js";
-import logger from '../utils/logger.js';
-import AppError from "../utils/appError.js";
+import {env} from "./env";
+import logger from '../utils/logger';
+import AppError from "../utils/appError";
 
 
-const connection = new Sequelize(env.DB_URL,{
+const connection : Sequelize = new Sequelize(env.DB_URL,{
     // host : '127.0.0.1',
     // database : 'practice',
     // username : 'root',

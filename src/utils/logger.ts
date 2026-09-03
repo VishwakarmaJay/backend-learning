@@ -1,5 +1,5 @@
 import pino from "pino";
-import {env} from "../config/env.js";
+import {env} from "../config/env";
 
 const logger = pino({
   level: env.LOG_LEVEL || "info",
@@ -13,10 +13,9 @@ const logger = pino({
   ],
   censor: '[REDACTED]',
 },
-  transport:
-    env.NODE_ENV !== "production"
-      ? { target: "pino-pretty", options: { colorize: true } }
-      : undefined,
+  ...(env.NODE_ENV !== "production"
+    ? { transport: { target: "pino-pretty", options: { colorize: true } } }
+    : {}),
 });
 
 export default logger;

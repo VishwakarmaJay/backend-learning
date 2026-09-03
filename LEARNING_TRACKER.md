@@ -260,15 +260,16 @@ Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 # Phase P — MySQL & Sequelize v6
 
 ## 0. JS → TypeScript migration (on-ramp — requested 2026-09-02)
-**Status:** `TODO` — do this FIRST in Phase P (convert the whole existing codebase to TS)
+**Status:** `IN PROGRESS` (2026-09-02) — utils ✓ + config ✓ (type-clean under strict). **Runtime switched to Bun** (bun.lock; `bun --watch` runs TS + auto-loads `.env`; `tsc --noEmit` is the ONLY type gate — Bun strips types, doesn't check). Removed junk `fs` dep + nodemon + tsx.
 
 Why now: Phase P's service/repository layers are TS-first; converting the existing Express + Sequelize code gives end-to-end type safety (controllers, models, config, error shapes) and makes the repository pattern natural.
 
 Plan (incremental — keep the app running the whole time):
-- [ ] Install: `typescript`, `tsx`, `@types/node`, `@types/express`, `@types/jsonwebtoken`, `@types/multer`, `@types/cors`, `@types/compression`
-- [ ] `tsconfig.json` — ESM (`module`/`moduleResolution: NodeNext`), `strict: true`, `outDir`/`rootDir`, `allowJs` for incremental migration
-- [ ] Scripts: `dev` → `tsx watch src/server.ts`; `build` → `tsc`; `start` → `node dist/server.js`
-- [ ] Migrate leaf-first: utils → config → models → middleware → controllers → routes → server (rename `.js` → `.ts`, one at a time)
+- [x] Install: `typescript`, `@types/node`, `@types/jsonwebtoken`, `@types/multer`, `@types/cors`, `@types/compression` (still need `@types/express` for the HTTP layer; `tsx` dropped — Bun runs TS)
+- [x] `tsconfig.json` — ESM (NodeNext), `strict: true` (from `tsc --init`; also exactOptionalPropertyTypes / verbatimModuleSyntax / noUncheckedIndexedAccess — aggressive, relax if friction)
+- [x] Scripts (**Bun**): `dev` → `bun --watch src/server.ts`; `start` → `bun src/server.ts`; `typecheck` → `tsc --noEmit`; `test` → `bun test`
+- [~] Migrate leaf-first: **utils ✓ · config ✓** (0 tsc errors under strict) → models → middleware → controllers → routes → server
+- Gotchas hit: NodeNext imports must end `.js` (not `.ts`/bare); `exactOptionalPropertyTypes` forbids `x: undefined` (omit/conditional-spread); `jwt.sign` expiresIn is `number|StringValue` not `string` (typed SignOptions + NonNullable cast)
 - [ ] Type Sequelize models (`InferAttributes` / `InferCreationAttributes`) — the biggest lift
 - [ ] Type Express (`Request`/`Response`/`NextFunction`); augment `Request` with `user` via declaration merging (for `authMiddelWare`)
 - [ ] Config typed for free: `type Env = z.infer<typeof envSchema>`
