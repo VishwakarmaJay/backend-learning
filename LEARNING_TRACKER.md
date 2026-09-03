@@ -260,23 +260,25 @@ Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 # Phase P — MySQL & Sequelize v6
 
 ## 0. JS → TypeScript migration (on-ramp — requested 2026-09-02)
-**Status:** `IN PROGRESS` (2026-09-02) — utils ✓ + config ✓ (type-clean under strict). **Runtime switched to Bun** (bun.lock; `bun --watch` runs TS + auto-loads `.env`; `tsc --noEmit` is the ONLY type gate — Bun strips types, doesn't check). Removed junk `fs` dep + nodemon + tsx.
+**Status:** `IN PROGRESS` (2026-09-02) — utils ✓ + config ✓ + models ✓ (tsc clean + runtime MySQL connect). **Runtime switched to Bun** (bun.lock; `bun --watch` runs TS + auto-loads `.env`; `tsc --noEmit` is the ONLY type gate — Bun strips types, doesn't check). Removed junk `fs`/`i`/`npm` deps + nodemon + tsx.
+
+**⚠️ Sequelize DECISION (2026-09-02): switched to `@sequelize/core` v7 (ALPHA) + decorators — NOT v6.** Deviates from this phase's "v6" title; later topics (migrations/scopes/hooks/raw queries/optimistic locking) will follow v7 APIs = thinner docs + alpha risk. Stack: `@sequelize/core` + `@sequelize/mysql` (v7 needs a separate dialect pkg). Removed v6 `sequelize` + `sequelize-typescript` + `reflect-metadata`.
 
 Why now: Phase P's service/repository layers are TS-first; converting the existing Express + Sequelize code gives end-to-end type safety (controllers, models, config, error shapes) and makes the repository pattern natural.
 
 Plan (incremental — keep the app running the whole time):
 - [x] Install: `typescript`, `@types/node`, `@types/jsonwebtoken`, `@types/multer`, `@types/cors`, `@types/compression` (still need `@types/express` for the HTTP layer; `tsx` dropped — Bun runs TS)
-- [x] `tsconfig.json` — ESM (NodeNext), `strict: true` (from `tsc --init`; also exactOptionalPropertyTypes / verbatimModuleSyntax / noUncheckedIndexedAccess — aggressive, relax if friction)
+- [x] `tsconfig.json` — **Bun setup**: `moduleResolution: "bundler"` (no `.js`-extension requirement — right call for a Bun project), `module: esnext`, `types: ["node"]`, `esModuleInterop`, `experimentalDecorators` (v7 decorators), `strict`
 - [x] Scripts (**Bun**): `dev` → `bun --watch src/server.ts`; `start` → `bun src/server.ts`; `typecheck` → `tsc --noEmit`; `test` → `bun test`
-- [~] Migrate leaf-first: **utils ✓ · config ✓** (0 tsc errors under strict) → models → middleware → controllers → routes → server
-- Gotchas hit: NodeNext imports must end `.js` (not `.ts`/bare); `exactOptionalPropertyTypes` forbids `x: undefined` (omit/conditional-spread); `jwt.sign` expiresIn is `number|StringValue` not `string` (typed SignOptions + NonNullable cast)
-- [ ] Type Sequelize models (`InferAttributes` / `InferCreationAttributes`) — the biggest lift
+- [~] Migrate leaf-first: **utils ✓ · config ✓ · models ✓** (0 tsc errors + runtime MySQL connect under Bun) → middleware → controllers → routes → server
+- Gotchas hit: (nodenext era) imports end `.js` — now moot under bundler; `jwt.sign` expiresIn is `number|StringValue` not `string` (typed SignOptions + NonNullable cast); v7 assoc alias = property name (`as` forbidden)
+- [x] Type Sequelize models — via **@sequelize/core v7 decorators** (@Attribute/@PrimaryKey/@AutoIncrement/@NotNull/@HasMany/@BelongsTo). Register: `new Sequelize({dialect: MySqlDialect, url, models:[...]})` (no v6 `addModels`)
 - [ ] Type Express (`Request`/`Response`/`NextFunction`); augment `Request` with `user` via declaration merging (for `authMiddelWare`)
 - [ ] Config typed for free: `type Env = z.infer<typeof envSchema>`
 - [ ] Type `AppError`, the pino logger, `req.file` (multer)
 - [ ] Verify: `tsc` passes under `strict`, app boots, `/api-docs` still serves
 
-Watch-outs: under NodeNext, keep `.js` extensions in imports even in `.ts` source; Sequelize typing is the fiddly part; also fix the `middelware/` folder typo during the move.
+Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` needed); v7 Sequelize is ALPHA (sparse docs, API churn); install `@types/express` before the HTTP layer; also fix the `middelware/` folder typo during the move.
 
 ## 1. Advanced Sequelize queries
 **Status:** `TODO`

@@ -1,16 +1,17 @@
-import nodemailer from "nodemailer";
+import nodemailer, { TestAccount, Transporter } from "nodemailer";
 import logger from "../utils/logger.js";
+import AppError from "../utils/appError";
 
-const testAccount = await nodemailer.createTestAccount();
+const testAccount : TestAccount= await nodemailer.createTestAccount();
 
-const transporter = nodemailer.createTransport({
+const transporter : Transporter = nodemailer.createTransport({
   host: "smtp.ethereal.email", port: 587,
   auth: { user: testAccount.user, pass: testAccount.pass },
 });
 
 
 
-export const sendWelcomeEmail = async (to,name) => {
+export const sendWelcomeEmail = async (to : string,name : string) => {
   try {
     const info = await transporter.sendMail({
       from: '"Movie App" <no-reply@movieapp.dev>',
@@ -19,7 +20,7 @@ export const sendWelcomeEmail = async (to,name) => {
       html: `<h1>Welcome to Movie App, ${name}!</h1>`,
     });
 
-    const url = nodemailer.getTestMessageUrl(info);
+    const url : string | false = nodemailer.getTestMessageUrl(info);
     logger.info({ url }, "welcome email sent");
   } catch (error) {
     logger.error(error, "Error sending welcome email");

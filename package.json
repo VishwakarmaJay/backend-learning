@@ -42,6 +42,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.1",
     "pino-pretty": "^13.1.3"
   }
 }
