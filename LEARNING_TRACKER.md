@@ -284,7 +284,7 @@ Plan (incremental — keep the app running the whole time):
 Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` needed); v7 Sequelize is ALPHA (sparse docs, API churn); install `@types/express` before the HTTP layer; also fix the `middelware/` folder typo during the move.
 
 ## 1. Advanced Sequelize queries
-**Status:** `TODO`
+**Status:** `IN PROGRESS` (2026-09-02, on @sequelize/core v7)
 
 - [ ] Raw queries
 - [ ] Scopes
@@ -294,7 +294,7 @@ Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` ne
 - [ ] Transactions
 - [ ] Isolation concepts
 - [ ] Optimistic locking
-- [ ] N+1 detection
+- [x] N+1 detection + eager loading — `include: [{ association: "movie" }]` (v7 alias = property name, lowercase; verified 7→1 queries via SQL logging). Built `GET /watchlist` eager-loaded. Lesson: `tsc` passed on a wrong association key (`.Movie`) — runtime caught it → always verify.
 - [ ] EXPLAIN
 
 Mastery:

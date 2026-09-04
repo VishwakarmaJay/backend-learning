@@ -33,3 +33,24 @@ export const addToWatchlist = async (req : Request, res : Response) => {
   });
   res.status(201).json(newEntry);
 };
+
+
+export const getWatchlist = async (req : Request, res : Response ) =>{
+
+    const userId = req.user.id;
+
+    const watchList = await WatchList.findAll({
+      where : {
+        userId : userId
+      },
+      include : [
+        {
+          association : WatchList.associations.movie
+        }
+      ]
+    });
+
+
+    res.status(200).json({"list" : watchList})
+
+}
