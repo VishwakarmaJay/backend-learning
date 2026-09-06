@@ -14,6 +14,7 @@ import {
   NotNull,
   HasMany,
   BelongsTo,
+  Version,
 } from "@sequelize/core/decorators-legacy";
 
 import { User } from "./user";
@@ -53,6 +54,10 @@ export class Movie extends Model<
   @Attribute(DataTypes.INTEGER)
   @NotNull
   declare createdBy: number;
+
+  @Attribute(DataTypes.INTEGER)
+  @Version
+  declare version: CreationOptional<number>;
 
   @BelongsTo(() => User, {
     foreignKey: "createdBy",

@@ -2,6 +2,7 @@ import logger from "../utils/logger";
 import { Movie } from "../models/index";
 import AppError from "../utils/appError";
 import { Request, Response } from "express";
+import { OptimisticLockError } from "@sequelize/core";
 
 export const addPoster = async (req : Request, res : Response) => {
 
@@ -18,10 +19,17 @@ export const addPoster = async (req : Request, res : Response) => {
   }
 
   movie.posterUrl = req.file.filename;
-  await movie.save();
+  try{
+    await movie.save();
 
 
   res.status(200).json({ data: movie, message: "Poster added successfully" });
+  }
+  catch (e) {
+  if (e instanceof OptimisticLockError)
+    throw new AppError("Movie was modified by someone else — reload and retry", 409);
+  throw e;
+}
 };
 
 export const getMovie = async (req : Request, res : Response) => {
