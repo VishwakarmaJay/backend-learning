@@ -13,6 +13,7 @@ import {
   AutoIncrement,
   NotNull,
   BelongsTo,
+  Unique,
 } from "@sequelize/core/decorators-legacy";
 
 import { User } from "./user";
@@ -30,10 +31,12 @@ export class WatchList extends Model<
 
   @Attribute(DataTypes.INTEGER)
   @NotNull
+  @Unique("uq_user_movie")
   declare userId: number;
 
   @Attribute(DataTypes.INTEGER)
   @NotNull
+  @Unique("uq_user_movie")
   declare movieId: number;
 
   @Attribute(DataTypes.STRING)

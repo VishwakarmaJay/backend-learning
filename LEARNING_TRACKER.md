@@ -291,8 +291,8 @@ Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` ne
 - [ ] Hooks
 - [ ] Bulk create/update
 - [ ] Bulk destroy considerations
-- [ ] Transactions
-- [ ] Isolation concepts
+- [x] Transactions — v7 managed `connection.transaction(async (t) => …)` (auto commit on return / rollback on throw; pass `{transaction:t}` to each write). Built atomic `POST /watchlist/bulk`; verified rollback via before/after counts. Lessons: **`forEach`+async doesn't await** (use `for...of`); **never manual commit/rollback in a managed tx** (double-manages + swallows the error).
+- [~] Isolation / concurrency — check-then-insert **RACE (TOCTOU)** in addToWatchlist; robust fix = DB **composite unique** `(userId, movieId)` via `@Unique("uq_user_movie")` on both columns. Verified: duplicate pair → `UniqueConstraintError`; same-user-different-movie → allowed. Concept: composite unique = the *pair* is unique, not each column. (Deeper isolation levels: later.)
 - [ ] Optimistic locking
 - [x] N+1 detection + eager loading — `include: [{ association: "movie" }]` (v7 alias = property name, lowercase; verified 7→1 queries via SQL logging). Built `GET /watchlist` eager-loaded. Lesson: `tsc` passed on a wrong association key (`.Movie`) — runtime caught it → always verify.
 - [ ] EXPLAIN
