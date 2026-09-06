@@ -9,7 +9,10 @@ const connection = new Sequelize({
   dialect: MySqlDialect,
   url: env.DB_URL,
   models: [User, Movie, WatchList],
+  
 });
+
+User.addScope("defaultScope", { attributes: { exclude: ["password"] } });
 
 export async function dbConnection() {
   try {

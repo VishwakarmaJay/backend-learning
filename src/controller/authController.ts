@@ -18,7 +18,6 @@ const register = async (req : Request , res : Response) => {
     throw new AppError("User Already Exist", 409);
   }
 
-  const salt : string = await bcrypt.genSalt(10);
 
   const user : User= await User.create({
     first_name: first_name,
@@ -43,7 +42,7 @@ const register = async (req : Request , res : Response) => {
 const login = async (req : Request , res : Response) => {
   const { email, password } = req.body;
 
-  const userExist = await User.findOne({
+  const userExist = await User.withoutScope().findOne({
     where: {
       email: email,
     },

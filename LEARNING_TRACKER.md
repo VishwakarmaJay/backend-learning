@@ -287,7 +287,7 @@ Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` ne
 **Status:** `IN PROGRESS` (2026-09-02, on @sequelize/core v7)
 
 - [ ] Raw queries
-- [ ] Scopes
+- [x] Scopes — v7: `User.addScope("defaultScope", { attributes: { exclude: ["password"] } })` (auto-applied; placed in db.ts AFTER model registration, since v7 needs the model registered first) hides the hash from every query; `login` opts back in via `User.withoutScope()`. Verified: findByPk excludes password, login still works, wrong pw → 401. Gotcha: a default scope hits EVERY query → the one place needing the field (login) MUST bypass or it silently breaks.
 - [x] Hooks — `@BeforeSave` static hook on User hashes `password` with a `user.changed("password")` guard (so name-only updates don't re-hash). Moved hashing out of authController + seed → callers pass plaintext. **GOTCHA (verified): `bulkCreate` SKIPS per-row hooks by default** → seed wrote PLAINTEXT passwords (login failed); fix = `bulkCreate(rows, { individualHooks: true })`. Same bypass applies to `bulkUpdate`/`update`-by-query.
 - [~] Bulk create/update — `bulkCreate` used in seed; learned the `individualHooks` hook-bypass
 - [ ] Bulk destroy considerations
