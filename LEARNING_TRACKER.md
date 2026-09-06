@@ -288,8 +288,8 @@ Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` ne
 
 - [ ] Raw queries
 - [ ] Scopes
-- [ ] Hooks
-- [ ] Bulk create/update
+- [x] Hooks — `@BeforeSave` static hook on User hashes `password` with a `user.changed("password")` guard (so name-only updates don't re-hash). Moved hashing out of authController + seed → callers pass plaintext. **GOTCHA (verified): `bulkCreate` SKIPS per-row hooks by default** → seed wrote PLAINTEXT passwords (login failed); fix = `bulkCreate(rows, { individualHooks: true })`. Same bypass applies to `bulkUpdate`/`update`-by-query.
+- [~] Bulk create/update — `bulkCreate` used in seed; learned the `individualHooks` hook-bypass
 - [ ] Bulk destroy considerations
 - [x] Transactions — v7 managed `connection.transaction(async (t) => …)` (auto commit on return / rollback on throw; pass `{transaction:t}` to each write). Built atomic `POST /watchlist/bulk`; verified rollback via before/after counts. Lessons: **`forEach`+async doesn't await** (use `for...of`); **never manual commit/rollback in a managed tx** (double-manages + swallows the error).
 - [~] Isolation / concurrency — check-then-insert **RACE (TOCTOU)** in addToWatchlist; robust fix = DB **composite unique** `(userId, movieId)` via `@Unique("uq_user_movie")` on both columns. Verified: duplicate pair → `UniqueConstraintError`; same-user-different-movie → allowed. Concept: composite unique = the *pair* is unique, not each column. (Deeper isolation levels: later.)

@@ -13,10 +13,12 @@ import {
   AutoIncrement,
   NotNull,
   HasMany,
+  BeforeSave,
 } from "@sequelize/core/decorators-legacy";
 
 import { Movie } from "./movie";
 import { WatchList } from "./watchlist";
+import bcrypt from "bcryptjs";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -52,4 +54,14 @@ export class User extends Model<
     foreignKey: "createdBy",
   })
   declare movies?: NonAttribute<Movie[]>;
+
+  @BeforeSave
+  static async hashPassword(user : User)
+  {
+      if(user.changed('password'))
+      {
+        user.password = await bcrypt.hash(user.password ,10) 
+      }
+  }
+
 }

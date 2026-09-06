@@ -19,13 +19,12 @@ const register = async (req : Request , res : Response) => {
   }
 
   const salt : string = await bcrypt.genSalt(10);
-  const hashedPassword : string = await bcrypt.hash(password, salt);
 
   const user : User= await User.create({
     first_name: first_name,
     last_name: last_name,
     email: email,
-    password: hashedPassword,
+    password: password,
   });
 
   const token = generateToken(user.id   , res);

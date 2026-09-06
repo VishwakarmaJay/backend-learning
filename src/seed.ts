@@ -57,14 +57,9 @@ async function seed() {
   await Movie.sync();
   await WatchList.sync();
 
-  const salt = await bcrypt.genSalt(10);
   const createdUsers = await User.bulkCreate(
-    await Promise.all(
-      users.map(async (u) => ({
-        ...u,
-        password: await bcrypt.hash(u.password, salt),
-      }))
-    )
+      users,
+      {individualHooks : true}
   );
 
   const createdMovies = await Movie.bulkCreate(
