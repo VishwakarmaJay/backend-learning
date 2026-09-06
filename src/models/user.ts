@@ -14,6 +14,7 @@ import {
   NotNull,
   HasMany,
   BeforeSave,
+  Unique,
 } from "@sequelize/core/decorators-legacy";
 
 import { Movie } from "./movie";
@@ -39,6 +40,7 @@ export class User extends Model<
 
   @Attribute(DataTypes.STRING)
   @NotNull
+  @Unique
   declare email: string;
 
   @Attribute(DataTypes.STRING)

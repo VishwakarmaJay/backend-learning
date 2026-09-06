@@ -4,6 +4,8 @@ import { generateToken } from "../utils/generateToken";
 import AppError from "../utils/appError";
 import { sendWelcomeEmail } from "../services/email";
 import { Request, Response } from "express";
+import connection from "../config/db";
+import { QueryTypes } from "@sequelize/core";
 
 const register = async (req : Request , res : Response) => {
   const { first_name, last_name, email, password } = req.body;
@@ -42,11 +44,7 @@ const register = async (req : Request , res : Response) => {
 const login = async (req : Request , res : Response) => {
   const { email, password } = req.body;
 
-  const userExist = await User.withoutScope().findOne({
-    where: {
-      email: email,
-    },
-  });
+  const userExist = await connection.query("EXPLAIN SELECT * from users where email = : email", {replacements :email , type : QueryTypes.SELECT})
 
   if (!userExist) {
     throw new AppError("Invalid Email or Password", 401); // same 401, same message
