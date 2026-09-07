@@ -31,8 +31,8 @@
 # Current Position
 
 **Track:** 4 — Backend Build  
-**Phase:** O — Node.js & Express v5 Core — ✅ **COMPLETE + checkpoint PASSED (2026-09-02)**  
-**Current topic:** → **Phase P on-ramp: convert the whole codebase JS → TypeScript**, then P.1 advanced Sequelize queries + Repository pattern  (next session)  
+**Phase:** P — MySQL & Sequelize (on @sequelize/core v7) — 🔄 IN PROGRESS  
+**Current topic:** ✅ P.0 TS migration · ✅ P.1 advanced queries · 🔄 P.2 Repository/Service pattern (core built + verified; tests + DTOs deferred) → **next: P.3 Pagination & filtering**  
 **Revise (spaced):** `isOperational` hides non-operational error messages · per-instance state vs horizontal scaling (Redis/S3/log-aggregation)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
@@ -311,29 +311,39 @@ Mastery:
 ---
 
 ## 2. Repository pattern with TypeScript
-**Status:** `TODO`
+**Status:** `CORE DONE + VERIFIED` (2026-09-07) — architecture built on the auth slice; tests + DTOs deferred (user chose to move on).
 
-Target architecture:
+Target architecture (now real for auth):
 
 ```text
-Controller
+Controller  → HTTP only: req/res, token+cookie. Zero Sequelize.
     ↓
-Service
+Service     → business logic: rules, orchestration. Zero req/res.
     ↓
-Repository
+Repository  → data access only. ONLY layer that imports a model.
     ↓
-Sequelize
-    ↓
-MySQL
+Sequelize → MySQL
 ```
 
-- [ ] Convert relevant code to TypeScript
-- [ ] Design repository interface
-- [ ] Implement repository
-- [ ] Add service layer
-- [ ] Introduce DTOs
-- [ ] Separate transport from business logic
-- [ ] Test service independently
+- [x] Convert relevant code to TypeScript (whole tree already TS from P.0)
+- [x] Design repository interface — `IUserRepository` (findByEmail / findById / create) in `src/repositories/userRepository.ts`
+- [x] Implement repository — `UserRepository implements IUserRepository`; `findByEmail` uses `withoutScope()` (login needs the hash), `findById` keeps default scope (no hash leak), `create(data)` passes `CreationAttributes<User>` straight through
+- [x] Add service layer — `AuthService` (`src/services/authServices.ts`) with **constructor-injected `IUserRepository`** (DI); holds register/login business rules, throws `AppError`, returns `User` (no req/res)
+- [x] Separate transport from business logic — `authController` thinned to req→service→token→res; **verified** via smoke test (login happy/wrong-pw/unknown-email → 1/401/401 through the full stack, behavior unchanged)
+- [~] Test service independently — **the payoff, proven:** 1 passing `login` test with a 3-line fake repo, **zero DB connection** (`bun test`). DEFERRED: 2 more (wrong-pw / unknown-email throw-tests), and register needs email injected first.
+- [~] Introduce DTOs — input DTOs done (`RegisterInput`/`LoginInput`); **output DTO NOT done** → `register` returns the `User` model (controller manually picks `{name,email}` to avoid leaking the hash — fragile).
+
+**Key lessons:**
+- **Dependency injection is the whole point:** service depends on the *interface*, not `new UserRepository()`. Prod passes the real repo; a test passes a fake `{findByEmail, findById, create}` → business logic tested with no MySQL, no network, ~1ms.
+- **T/B/D decomposition** (register): transport = `req.body` / `generateToken`+cookie / `res.json` (controller); business = exists-check + create-orchestration + welcome-email (service); data = `findByEmail` + `create` (repo). Token+cookie is legitimately transport → stays in the controller.
+- Bugs caught while building (all passed `tsc`): `password: data.email` copy-paste (both `string` → compiler blind); `login` bypassing its own repo with a direct `User.withoutScope().findOne` (breaks layering + testability); dead if/else + dead imports riding along in copy-paste. Theme holds: **tsc green ≠ correct.**
+
+**Deferred / debt (circle back before Phase P checkpoint):**
+- register unit test blocked until `sendWelcomeEmail` is **injected** (recall #3) — direct import would fire real SMTP in a "unit" test.
+- output DTO / serializer so services don't return raw models (hash-leak risk).
+- move `authServices.test.ts` out of `src/routes/` → `src/services/`.
+- register still does a racy `findByEmail` pre-check — could drop it and catch `UniqueConstraintError → 409` (email is unique-constrained now), like the watchlist fix.
+- only the auth slice is layered; movie/watchlist controllers still call models directly.
 
 ---
 
