@@ -5,7 +5,6 @@ import { Request, Response } from "express";
 import { OptimisticLockError } from "@sequelize/core";
 import { MovieService } from "../services/movieService";
 import { MovieRepository } from "../repositories/movieRepository";
-import { number } from "zod";
 
 const movieService = new MovieService(new MovieRepository());
 
