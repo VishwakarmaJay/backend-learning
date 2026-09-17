@@ -5,7 +5,6 @@ import { Request, Response } from "express";
 import { OptimisticLockError } from "@sequelize/core";
 import { MovieService } from "../services/movieService";
 import { MovieRepository } from "../repositories/movieRepository";
-import { hsts } from "helmet";
 
 const movieService = new MovieService(new MovieRepository());
 
@@ -55,7 +54,19 @@ export const getMovieList = async (req: Request, res: Response) => {
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(req.query.limit) || 10));
   const offset = (page - 1) * limit;
 
-  const { rows, count } = await movieService.movieList({ limit, offset });
+  const filters : filters = {
+    q: typeof req.query.q === "string" ? req.query.q : undefined,
+    year: typeof req.query.year === "string" ? req.query.year : undefined,
+    minRuntime: req.query.minRuntime ? Number(req.query.minRuntime) : undefined,
+    maxRuntime: req.query.maxRuntime ? Number(req.query.maxRuntime) : undefined,
+  };
+
+
+  const { rows, count } = await movieService.movieList({
+    limit,
+    offset,
+    filter : filters,
+  });
 
   res.status(200).json({
     data: rows,
@@ -74,13 +85,16 @@ export const getMovieCusorList = async (req: Request, res: Response) => {
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(req.query.limit) || 10));
   const cursor = req.query.cusor ? Number(req.query.cusor) : undefined;
 
-  const {rows , hasMore} = await movieService.movieCusorList({ limit, cursor });
+  const { rows, hasMore } = await movieService.movieCusorList({
+    limit,
+    cursor,
+  });
 
   res.status(200).json({
     data: rows,
     meta: {
       nextCursor: rows.at(-1)?.id ?? null,
-      hasMore
+      hasMore,
     },
   });
 };

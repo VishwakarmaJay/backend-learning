@@ -3,7 +3,8 @@ import { IMovieRepository } from "../repositories/movieRepository";
 
 export interface MovieListInput {
   offset : number,
-  limit : number
+  limit : number,
+  filter? : filters
 }
 
 export interface MovieCusorListInput {
@@ -15,7 +16,7 @@ export class MovieService {
   constructor(private readonly movie: IMovieRepository) {}
 
   async movieList(input: MovieListInput): Promise<{ rows: Movie[]; count: number }>{
-    const {rows,count} = await this.movie.findPage({limit : input.limit, offset :input.offset})
+    const {rows,count} = await this.movie.findPage({limit : input.limit, offset :input.offset, filter : input.filter})
 
     return {rows,count};
     

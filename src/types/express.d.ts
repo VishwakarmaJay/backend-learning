@@ -7,6 +7,15 @@ declare global {
       user: User;
     }
   }
+
+  type filters  = {
+    q : string | undefined,
+    year: string | undefined,
+    minRuntime:  number | undefined,
+    maxRuntime: number | undefined,
+  }
 }
+
+
 
 export {};
