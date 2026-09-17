@@ -1,9 +1,14 @@
-import { Movie, User } from "../models";
+import { Movie } from "../models";
 import { IMovieRepository } from "../repositories/movieRepository";
 
 export interface MovieListInput {
   offset : number,
   limit : number
+}
+
+export interface MovieCusorListInput {
+  limit : number
+  cursor? : number
 }
 
 export class MovieService {
@@ -14,6 +19,13 @@ export class MovieService {
 
     return {rows,count};
     
+  }
+
+  async movieCusorList (input : MovieCusorListInput) : Promise<{rows : Movie[], hasMore : boolean}>
+  {
+    const {rows , hasMore} = await this.movie.findPageByCursor({limit : input.limit , cursor : input.cursor})
+
+    return {rows : rows , hasMore : hasMore};
   }
 
 }

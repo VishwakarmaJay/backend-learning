@@ -32,7 +32,7 @@
 
 **Track:** 4 — Backend Build  
 **Phase:** P — MySQL & Sequelize (on @sequelize/core v7) — 🔄 IN PROGRESS  
-**Current topic:** ✅ P.0 TS migration · ✅ P.1 advanced queries · 🔄 P.2 Repository/Service pattern (core built + verified; tests + DTOs deferred) → **next: P.3 Pagination & filtering**  
+**Current topic:** ✅ P.0 TS migration · ✅ P.1 advanced queries · 🔄 P.2 Repository/Service (core done; tests + DTOs deferred) · 🔄 P.3 Pagination (offset + cursor done + measured) → **next: dynamic filters + search**  
 **Revise (spaced):** `isOperational` hides non-operational error messages · per-instance state vs horizontal scaling (Redis/S3/log-aggregation)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
@@ -348,17 +348,19 @@ Sequelize → MySQL
 ---
 
 ## 3. Pagination & filtering
-**Status:** `TODO`
+**Status:** `IN PROGRESS` (2026-09-17) — offset + cursor both built on `GET /movies`, verified against a 131k-row table. Remaining: dynamic filters + search.
 
-- [ ] Offset pagination
-- [ ] Cursor pagination
-- [ ] Choosing cursor vs offset
-- [ ] Stable sorting
+- [x] Offset pagination — `GET /movies?page&limit` → `findPage` = `findAndCountAll({limit, offset})`, `offset=(page-1)*limit`; `{data, meta:{page,limit,total,totalPages,hasMore}}` envelope. **Gotcha:** `findAndCountAll` fires 2 queries (page + `count(*)`) — offset pays a count every request.
+- [x] Cursor pagination — `GET /movies/cursor?cursor&limit` → `findPageByCursor` = `findAll({ where: cursor!==undefined ? {id:{[Op.gt]:cursor}} : undefined, order:[["id","ASC"]], limit: limit+1 })`. **`hasMore` via the limit+1 peek:** fetch one extra, `hasMore = rows.length > limit`, then TRIM the peek before building `data`/`nextCursor` (else you skip a row per page). `nextCursor = rows.at(-1)?.id ?? null`. Returns `{rows, hasMore}`; no `count`.
+- [x] Choosing cursor vs offset — offset: page-jumping + totals on small/stable/admin data. cursor: infinite-scroll/large/fast-changing/public APIs (flat depth + stable under insert/delete). Rule: page numbers→offset, "load more"→cursor.
+- [x] Stable sorting — offset/cursor over an **undefined** row order drops/dupes rows → both need a deterministic `ORDER BY id`. Cursor *requires* a unique ordered indexed column (the PK).
 - [ ] Dynamic filters
 - [ ] Search
-- [ ] Validation of pagination parameters
-- [ ] Performance implications
-- [ ] API response metadata
+- [x] Validation of pagination parameters — clamp both ends: `Math.min(MAX_LIMIT=100, Math.max(1, Number(limit)||10))`; `Number(undefined)`→`NaN` is the trap (bare list, and cursor absent → `id > NaN` **throws** → pass `undefined` not `NaN`).
+- [x] Performance implications — **measured on 131k rows:** `OFFSET 90000` = 27ms (EXPLAIN: reads 90,010 rows, discards 90,000 — O(offset), last page = slowest, whole-table walk = O(n²)); cursor = flat ~0.6ms at any depth (B-tree seek, reads exactly `limit`). OFFSET is scan-and-discard, not a seek.
+- [x] API response metadata — offset: `{page,limit,total,totalPages,hasMore}`; cursor: `{nextCursor,hasMore}` (no total).
+
+**Debt:** stray autocomplete imports keep sneaking in (`number` from zod, `hsts` from helmet) — scan the import block before saving. `cusor` typo lingers in the public query param + `getMovieCusorList`/`movieCusorList` names (internals fixed) — rename to `cursor`. `findPage`/cursor only on movies; watchlist list still unpaginated.
 
 ---
 

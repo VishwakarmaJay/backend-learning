@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { OptimisticLockError } from "@sequelize/core";
 import { MovieService } from "../services/movieService";
 import { MovieRepository } from "../repositories/movieRepository";
+import { hsts } from "helmet";
 
 const movieService = new MovieService(new MovieRepository());
 
@@ -64,6 +65,22 @@ export const getMovieList = async (req: Request, res: Response) => {
       total: count,
       totalPages: Math.ceil(count / limit),
       hasMore: page < Math.ceil(count / limit),
+    },
+  });
+};
+
+export const getMovieCusorList = async (req: Request, res: Response) => {
+  const MAX_LIMIT = 100;
+  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(req.query.limit) || 10));
+  const cursor = req.query.cusor ? Number(req.query.cusor) : undefined;
+
+  const {rows , hasMore} = await movieService.movieCusorList({ limit, cursor });
+
+  res.status(200).json({
+    data: rows,
+    meta: {
+      nextCursor: rows.at(-1)?.id ?? null,
+      hasMore
     },
   });
 };
