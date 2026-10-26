@@ -20,6 +20,7 @@ import {
 import { Movie } from "./movie";
 import { WatchList } from "./watchlist";
 import bcrypt from "bcryptjs";
+import { RefreshToken } from "./refreshToken";
 
 export class User extends Model<
   InferAttributes<User>,
@@ -56,6 +57,11 @@ export class User extends Model<
     foreignKey: "createdBy",
   })
   declare movies?: NonAttribute<Movie[]>;
+
+  @HasMany(() => RefreshToken, {
+    foreignKey: "userId",
+  })
+  declare refreshTokens?: NonAttribute<RefreshToken[]>;
 
   @BeforeSave
   static async hashPassword(user : User)

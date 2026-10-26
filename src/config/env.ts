@@ -6,6 +6,7 @@ const envSchema = z.object({
     DB_URL: z.string(),
     JWT_SECRET: z.string(),
     JWT_EXPIRES_IN: z.string(),
+    PORT: z.string().default("3000"),
     LOG_LEVEL: z.enum(["trace","debug","info","warn","error","fatal"]).default("info"),
 });
 

@@ -4,6 +4,7 @@ import {WatchList} from "./watchlist";
 import { Venue } from "./venue";
 import { Booking } from "./booking";
 import { Event } from "./event";
+import { RefreshToken } from "./refreshToken";
 
 const models = {
     User,
@@ -12,6 +13,7 @@ const models = {
     Event,
     Venue,
     Booking,
+    RefreshToken
 };
 
 export {
@@ -21,6 +23,7 @@ export {
     Event,
     Venue,
     Booking,
+    RefreshToken
 };
 
 export default models;
