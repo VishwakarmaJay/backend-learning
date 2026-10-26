@@ -32,7 +32,8 @@
 
 **Track:** 4 — Backend Build  
 **Phase:** P — MySQL & Sequelize (on @sequelize/core v7) — 🔄 IN PROGRESS  
-**Current topic:** ✅ P.0 TS migration · ✅ P.1 advanced queries · 🔄 P.2 Repository/Service (core done; tests + DTOs deferred) · ✅ P.3 Pagination & filtering (offset + cursor + filters/search, all measured) → **next: P.4 Phase P checkpoint** (or clear P.2/P.3 cleanup debt)  
+**Phase P — MySQL & Sequelize — ✅ COMPLETE (checkpoint PASSED 2026-10-26)**  
+**Current topic:** ✅ P.0 TS · ✅ P.1 advanced queries · ✅ P.2 Repository/Service (core; tests+DTOs deferred) · ✅ P.3 Pagination & filtering · ✅ P.4 checkpoint PASSED → **next: Phase Q — JWT Authentication**  
 **Revise (spaced):** `isOperational` hides non-operational error messages · per-instance state vs horizontal scaling (Redis/S3/log-aggregation)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
@@ -365,18 +366,21 @@ Sequelize → MySQL
 ---
 
 ## 4. Phase P checkpoint
-**Status:** `TODO`
+**Status:** ✅ `PASSED` (2026-10-26) — built an **Event Booking API** on a fresh domain (Venue / Event / Booking + reused User as attendee), verified against live DB.
 
-- [ ] DB design exercise
-- [ ] ERD
-- [ ] migrations
-- [ ] repository layer
-- [ ] services
-- [ ] pagination
-- [ ] filtering
-- [ ] transaction
-- [ ] optimistic locking scenario
-- [ ] checkpoint interview
+- [x] DB design exercise — normalized `Venue` (capacity), `Event` (venueId FK, startTime, booked counter), `Booking` join with composite unique `(eventId, userId)`; thoughtful indexes: composite `(venueId, startTime)` + standalone `(startTime)`.
+- [x] ERD / relationships — Venue 1─many Event; Event 1─many Booking; User 1─many Booking.
+- [ ] migrations — still used `.sync()`, NOT real migrations (migrations remain deferred across Phase P — flag for later).
+- [x] repository layer — `EventRepository.findPage` (pagination + filter `where` builder).
+- [x] services — `EventService` (passthrough for now).
+- [x] pagination — offset + metadata envelope on `GET /events`.
+- [x] filtering — title (`Op.like`), venueId exact, **startTime range** (`from`/`to` → `where.startTime` gte/lte merge). Verified: range + lower-bound + text all correct.
+- [x] transaction — `POST /events/:id/book`: `connection.transaction` wraps read→check→create booking→`event.increment("booked")` atomically.
+- [x] optimistic locking scenario → chose **pessimistic** (`findByPk({ lock: Lock.UPDATE })` = `SELECT … FOR UPDATE`). **Verified no oversell under concurrency:** 2 racers for the last seats → exactly 1 won (201), other rejected 409, `booked` never exceeded capacity. Correct call for high-contention single hot row (cost accepted: lower throughput + deadlock risk). Optimistic would thrash on retries under a stampede.
+- [x] checkpoint interview — Q1 (pessimistic vs optimistic = contention profile) cemented; Q2 (leftmost-prefix: `?from&to` uses the standalone `startTime` index, not the composite) nailed; Q3 (venue-capacity oversell when events overlap → fix with a schema guarantee: one-event-per-venue-slot OR capacity-on-Event, not manual reshuffling).
+
+**Bugs caught during the checkpoint (all wiring/copy-paste, not concepts):** new models missing from `db.ts` `models:[…]` (v7 registration → "not initialized"); booking route wired to `bulkAddToWatchlist` instead of `bookEvent`; filter used nonexistent column `where.date` (should be `where.startTime`) — hidden by `where: any` (→ `WhereOptions<Event>` would catch it at compile time). **Lesson reinforced: reasoning was sound; the slips were integration, and `tsc` green ≠ correct.**
+**Minor open:** dead imports (`Movie` in eventRepository, `sequelize` in eventController); `where: any` → `WhereOptions<Event>`.
 
 ---
 

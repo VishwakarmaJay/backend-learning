@@ -14,6 +14,14 @@ declare global {
     minRuntime:  number | undefined,
     maxRuntime: number | undefined,
   }
+
+  type eventFilters = {
+    venue: number | undefined,
+    title : string | undefined,
+    from : Date  | undefined, // start time
+    to : Date  | undefined, // end times
+  }
+
 }
 
 

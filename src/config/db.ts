@@ -3,13 +3,13 @@ import { MySqlDialect } from '@sequelize/mysql';
 import { env } from "./env";
 import logger from '../utils/logger';
 import AppError from "../utils/appError";
-import { User, Movie, WatchList } from '../models/index';
+import { User, Movie, WatchList, Venue, Booking , Event} from '../models/index';
 
 const connection = new Sequelize({
   dialect: MySqlDialect,
   url: env.DB_URL,
-  models: [User, Movie, WatchList],
-  
+  models: [User, Movie, WatchList, Event, Venue, Booking],
+
 });
 
 User.addScope("defaultScope", { attributes: { exclude: ["password"] } });
