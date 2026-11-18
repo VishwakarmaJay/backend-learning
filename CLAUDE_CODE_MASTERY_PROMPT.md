@@ -81,7 +81,9 @@ Important rules:
 
 # 3. My current learning status
 
-Already completed:
+> **Status as of 2026-11-18 — `LEARNING_TRACKER.md` is the source of truth.** The roadmap below is the original plan. Since it was written, Phase O (checkpoint passed 2026-09-02) and Phase P (checkpoint passed 2026-10-26) are complete. **Phase Q (JWT) is in progress:** a refresh-token model and endpoint are committed, but rotation, reuse detection, revocation and logout are not built. Read the tracker's Current Position before teaching.
+
+Already completed (at the time this prompt was written):
 
 ### Track 4 / Backend
 - Express routing & middleware

@@ -31,9 +31,10 @@
 # Current Position
 
 **Track:** 4 — Backend Build  
-**Phase:** P — MySQL & Sequelize (on @sequelize/core v7) — 🔄 IN PROGRESS  
-**Phase P — MySQL & Sequelize — ✅ COMPLETE (checkpoint PASSED 2026-10-26)**  
-**Current topic:** ✅ P.0 TS · ✅ P.1 advanced queries · ✅ P.2 Repository/Service (core; tests+DTOs deferred) · ✅ P.3 Pagination & filtering · ✅ P.4 checkpoint PASSED → **next: Phase Q — JWT Authentication**  
+**Phase:** Q — JWT Authentication — 🔄 IN PROGRESS (refresh-token code committed 2026-10-26 in `6fe6aa5`; not yet reviewed or verified in a session)  
+**Previous phase:** P — MySQL & Sequelize (on @sequelize/core v7) — ✅ COMPLETE (checkpoint PASSED 2026-10-26)  
+**Phase P recap:** ✅ P.0 TS · ✅ P.1 advanced queries (core; bulk destroy + isolation levels open) · ✅ P.2 Repository/Service (core; tests+DTOs deferred) · ✅ P.3 Pagination & filtering · ✅ P.4 checkpoint PASSED  
+**Current topic:** Q.1 JWT deep dive (anatomy lab exists in `src/jwt.ts`) + Q.2 refresh tokens (DB model, hashed storage, `/auth/refresh-token` built — **rotation, reuse detection, revocation and logout not built**) → **next: review the committed code, then build rotation**  
 **Revise (spaced):** `isOperational` hides non-operational error messages · per-instance state vs horizontal scaling (Redis/S3/log-aggregation)  
 **Overall strategy:** project-first, implementation-heavy, active recall
 
@@ -261,7 +262,7 @@ Mastery: [x] Explain [x] Implement [x] Debug [x] Apply [ ] Defend
 # Phase P — MySQL & Sequelize v6
 
 ## 0. JS → TypeScript migration (on-ramp — requested 2026-09-02)
-**Status:** `IN PROGRESS` (2026-09-02) — utils ✓ + config ✓ + models ✓ (tsc clean + runtime MySQL connect). **Runtime switched to Bun** (bun.lock; `bun --watch` runs TS + auto-loads `.env`; `tsc --noEmit` is the ONLY type gate — Bun strips types, doesn't check). Removed junk `fs`/`i`/`npm` deps + nodemon + tsx.
+**Status:** `DONE` (2026-09-02; status corrected 2026-11-18 — the tree-wide migration line below records tsc 0 errors, boot under Bun and /api-docs 200) — utils ✓ + config ✓ + models ✓ (tsc clean + runtime MySQL connect). **Runtime switched to Bun** (bun.lock; `bun --watch` runs TS + auto-loads `.env`; `tsc --noEmit` is the ONLY type gate — Bun strips types, doesn't check). Removed junk `fs`/`i`/`npm` deps + nodemon + tsx.
 
 **⚠️ Sequelize DECISION (2026-09-02): switched to `@sequelize/core` v7 (ALPHA) + decorators — NOT v6.** Deviates from this phase's "v6" title; later topics (migrations/scopes/hooks/raw queries/optimistic locking) will follow v7 APIs = thinner docs + alpha risk. Stack: `@sequelize/core` + `@sequelize/mysql` (v7 needs a separate dialect pkg). Removed v6 `sequelize` + `sequelize-typescript` + `reflect-metadata`.
 
@@ -277,15 +278,15 @@ Plan (incremental — keep the app running the whole time):
 - 🔥 Mistake (pattern): blind case-insensitive `.js`→`` find-replace to strip import extensions ate `.json`/`.JSON` → 11 casualties (`res….json(`→`on(`, `express.json`→`expresson`, `DataTypes.JSON`→`DataTypesON`). Under bundler resolution, stripping extensions was UNNECESSARY (`.js` and extensionless both resolve). Never blind-replace a bare `.js`.
 - Gotchas hit: (nodenext era) imports end `.js` — now moot under bundler; `jwt.sign` expiresIn is `number|StringValue` not `string` (typed SignOptions + NonNullable cast); v7 assoc alias = property name (`as` forbidden)
 - [x] Type Sequelize models — via **@sequelize/core v7 decorators** (@Attribute/@PrimaryKey/@AutoIncrement/@NotNull/@HasMany/@BelongsTo). Register: `new Sequelize({dialect: MySqlDialect, url, models:[...]})` (no v6 `addModels`)
-- [ ] Type Express (`Request`/`Response`/`NextFunction`); augment `Request` with `user` via declaration merging (for `authMiddelWare`)
-- [ ] Config typed for free: `type Env = z.infer<typeof envSchema>`
-- [ ] Type `AppError`, the pino logger, `req.file` (multer)
-- [ ] Verify: `tsc` passes under `strict`, app boots, `/api-docs` still serves
+- [x] Type Express (`Request`/`Response`/`NextFunction`); augment `Request` with `user` via declaration merging (for `authMiddelWare`) — done per the HTTP-layer note above (`src/types/express.d.ts`)
+- [~] Config typed for free: `type Env = z.infer<typeof envSchema>` — `env` is typed by the parse result, but no named `Env` type exists in `src/config` (checked 2026-11-18)
+- [~] Type `AppError`, the pino logger, `req.file` (multer) — `AppError` is a typed TS class (`src/utils/appError.ts`); logger and `req.file` not separately checked
+- [x] Verify: `tsc` passes under `strict`, app boots, `/api-docs` still serves — recorded in the migrate-leaf-first line above
 
 Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` needed); v7 Sequelize is ALPHA (sparse docs, API churn); install `@types/express` before the HTTP layer; also fix the `middelware/` folder typo during the move.
 
 ## 1. Advanced Sequelize queries
-**Status:** `IN PROGRESS` (2026-09-02, on @sequelize/core v7)
+**Status:** `REVIEW` (2026-09-02, on @sequelize/core v7; status corrected 2026-11-18 to match Current Position) — core done; open: bulk destroy, deeper isolation levels. Mastery boxes below were never filled in — left blank until assessed
 
 - [x] Raw queries — v7 `connection.query(sql)` → `[rows, metadata]`; **parameterize** with `{ replacements: { email } }` (never string-concat → SQL injection); bypasses the ORM (no scopes/hooks/types — a raw `SELECT *` ignores the password default-scope).
 - [x] Scopes — v7: `User.addScope("defaultScope", { attributes: { exclude: ["password"] } })` (auto-applied; placed in db.ts AFTER model registration, since v7 needs the model registered first) hides the hash from every query; `login` opts back in via `User.withoutScope()`. Verified: findByPk excludes password, login still works, wrong pw → 401. Gotcha: a default scope hits EVERY query → the one place needing the field (login) MUST bypass or it silently breaks.
@@ -297,7 +298,6 @@ Watch-outs: **bundler resolution** now → extensionless imports OK (no `.js` ne
 - [x] Optimistic locking — `@Version` (+`@Attribute(DataTypes.INTEGER)`, typed `CreationOptional<number>`) on Movie. Every `.save()` runs `UPDATE … WHERE id=? AND version=?`; a stale save → `OptimisticLockError`. Verified: A saves (v0→1), B's stale save rejected → prevents the **lost update**. version is auto-managed (never set it / never put in a create). Optimistic (detect+retry, low contention) vs pessimistic (`SELECT … FOR UPDATE`, high contention). Map `OptimisticLockError` → 409.
 - [x] EXPLAIN + indexes — MySQL 8 tree plans via raw `EXPLAIN`. Read it: **"Table scan"** 🚩 (reads every row) vs **"Index lookup"** / **"Rows fetched before execution"** (unique index → const single-row lookup). Indexes: PK/unique/FK are all indexes; **leftmost-prefix rule** (composite `(userId,movieId)` helps `userId` but not `movieId` alone → FK index covers movieId); trade-off = faster reads, slower writes. **Applied:** `users.email` had NO index → login = full table scan → added `@Unique` on email → const lookup + duplicate emails rejected.
 - [x] N+1 detection + eager loading — `include: [{ association: "movie" }]` (v7 alias = property name, lowercase; verified 7→1 queries via SQL logging). Built `GET /watchlist` eager-loaded. Lesson: `tsc` passed on a wrong association key (`.Movie`) — runtime caught it → always verify.
-- [ ] EXPLAIN
 
 Mastery:
 
@@ -387,12 +387,14 @@ Sequelize → MySQL
 # Phase Q — JWT Authentication
 
 ## 1. JWT deep dive
-**Status:** `TODO`
+**Status:** `IN PROGRESS` (lab code committed 2026-10-26 in `6fe6aa5`; recorded 2026-11-18 from git — no explanation or quiz evidence logged yet)
 
-- [ ] JWT anatomy
-- [ ] header
-- [ ] payload
-- [ ] signature
+Evidence in code: `src/jwt.ts` signs a token, splits it on `.`, base64url-decodes header and payload, then forges a token (new payload + old signature) and checks `jwt.verify` rejects it.
+
+- [~] JWT anatomy — lab exists; not yet explained in a session
+- [~] header — decoded in `src/jwt.ts`
+- [~] payload — decoded in `src/jwt.ts`
+- [~] signature — tamper test in `src/jwt.ts` (forged payload + original signature → expected REJECTED)
 - [ ] HS256
 - [ ] RS256
 - [ ] public/private keys
@@ -405,17 +407,28 @@ Sequelize → MySQL
 ---
 
 ## 2. Refresh token rotation
-**Status:** `TODO`
+**Status:** `IN PROGRESS` (code committed 2026-10-26 in `6fe6aa5`; recorded 2026-11-18 from git — not yet reviewed, run or verified in a session)
 
-- [ ] Refresh token DB model
-- [ ] Hash refresh tokens where appropriate
-- [ ] Rotation
-- [ ] Reuse detection
-- [ ] Revocation
+What the commit builds:
+- `RefreshToken` model (`src/models/refreshToken.ts`): `userId`, unique `tokenHash`, `expiresAt`, nullable `revokedAt`; `User` hasMany `RefreshToken`; registered in `db.ts`
+- `login` issues a 32-byte random opaque refresh token, stores it (hashed by a `@BeforeSave` hook via SHA-256 in `src/utils/hash.ts`), and sets an `httpOnly`, `sameSite: strict` cookie scoped to `path: /auth/refresh-token`, 7 days
+- `POST /auth/refresh-token` hashes the cookie value, looks it up, rejects missing/expired/revoked tokens with 401, then issues a new access token
+
+- [~] Refresh token DB model — code present
+- [~] Hash refresh tokens where appropriate — SHA-256 at rest via hook; lookup hashes the raw cookie the same way
+- [ ] Rotation — **not built**: `/auth/refresh-token` issues a new access token but keeps the same refresh token
+- [ ] Reuse detection — not built
+- [ ] Revocation — `revokedAt` is checked, but nothing sets it yet
 - [ ] Device sessions
 - [ ] Logout current device
 - [ ] Logout all devices
-- [ ] Token expiry
+- [~] Token expiry — refresh token expiry is stored and checked (7 days)
+
+Things to check when reviewing this code (read-only observations, 2026-11-18):
+- The access token cookie (`jwt`) still has `maxAge` 7 days — same as the refresh token, which removes the point of a short-lived access token.
+- `JWT_EXPIRES_IN` appears twice in `.env`; confirm which value actually wins.
+- `/auth/refresh-token` sits behind `authLimiter` (5 requests / 15 min) shared with login, so normal refreshes count against the login limit.
+- `src/jwt.ts` is a lab script living in `src/`.
 - [ ] Session cleanup
 
 ---
@@ -1053,13 +1066,13 @@ Application
 
 | Area | Explain | Implement | Debug | Apply | Defend |
 |---|---:|---:|---:|---:|---:|
-| Node internals |  |  |  |  |  |
-| Express errors |  |  |  |  |  |
-| OpenAPI |  |  |  |  |  |
-| Security middleware |  |  |  |  |  |
-| Uploads |  |  |  |  |  |
-| Email |  |  |  |  |  |
-| Config/secrets |  |  |  |  |  |
+| Node internals | ✓ | ✓ | ✓ |  |  |
+| Express errors | ✓ | ✓ | ✓ | ✓ |  |
+| OpenAPI | ✓ | ✓ | ✓ | ✓ |  |
+| Security middleware | ✓ | ✓ | ✓ | ~ (CORS fix pending) |  |
+| Uploads | ✓ | ✓ | ✓ | ✓ |  |
+| Email | ✓ | ✓ | ✓ | ✓ |  |
+| Config/secrets | ✓ | ✓ | ✓ | ✓ |  |
 | Sequelize advanced |  |  |  |  |  |
 | Repository pattern |  |  |  |  |  |
 | Pagination |  |  |  |  |  |
@@ -1083,6 +1096,7 @@ Application
 |---|---|---|---:|---|---|
 | 2026-09-02 | O | Node internals: event loop & streams | 11/15 warm-up | nextTick vs Promise priority; thread-pool ≠ arbitrary JS; serialization math | Revisit setImmediate vs setTimeout |
 | 2026-09-02 | O | **Phase O checkpoint** | PASS (concepts 72%; arch ~30%) | isOperational message-hiding; horizontal scaling / shared state | Redis/S3/log-agg → Phase R + System Design |
+| 2026-10-26 | P | **Phase P checkpoint** (Event Booking API) | PASS | Integration slips, not concepts: models missing from `db.ts`, route wired to the wrong handler, nonexistent column hidden by `where: any`. Migrations still not used | `where: any` → `WhereOptions<…>`; real migrations later |
 
 ---
 
@@ -1304,6 +1318,30 @@ Warm-up 11/15; ordering puzzles 5/5 then 4/5 (nextTick miss); sort 5/6 (thread-p
 
 ### Next session
 - Phase O topic 5 — File uploads (Multer): multipart/form-data, validation, size/MIME limits, storage, presigned URLs
+
+---
+
+## 2026-09-02 → 2026-10-26 — Phase O topics 5–8 · Phase P (all) · Phase Q start
+
+> **Reconstructed 2026-11-18** from this tracker's topic sections and the git log. No session entries were written at the time, so this lists only what those records already show. Nothing new is claimed here.
+
+### Covered (see each topic section for detail)
+- Phase O topics 5–8: uploads, email, env config, Phase O checkpoint PASS (2026-09-02)
+- P.0 TS migration + Bun + `@sequelize/core` v7 (2026-09-02) · P.1 advanced queries
+- P.2 repository/service on the auth slice + first unit test (`dd507c5`, `ad4dc97`, 2026-09-07)
+- P.3 offset + cursor pagination, filters, search (`bb4ec1f`, `d5dd525`, `aa64fbf`, 2026-09-07 → 09-17)
+- P.4 checkpoint: Event Booking API with pessimistic locking — PASS (`e1992f9`, 2026-10-26)
+- Phase Q started: JWT anatomy lab + refresh-token model and endpoint (`6fe6aa5`, 2026-10-26) — not reviewed in a session
+
+### Mastery
+- No boxes changed by this entry.
+
+### Technical debt (still open)
+- `.env` in git history → rotate `JWT_SECRET` · no real migrations (`.sync()`) · `bcryptjs` + dual bcrypt libs · `where: any` · `cusor` naming · movie/watchlist not layered · output DTOs + remaining service tests
+
+### Next session
+- Review the `6fe6aa5` refresh-token code (see Phase Q.2 "Things to check"), then build rotation + reuse detection + logout
+- Spaced revision first: `isOperational` message-hiding · per-instance state vs horizontal scaling
 
 ---
 
